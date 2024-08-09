@@ -1,0 +1,104 @@
+.card{
+    min-width: 300px;
+   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.71);
+    margin: auto;
+    height: 480px;
+    border: 1px solid black;
+    align-items: center;
+    margin-top: 10px;
+    border-radius: 10px;
+    
+    
+}
+
+.asd{
+    text-align: center;
+
+}
+.h{
+    font-size: 17px;
+}
+.btndelet{
+    
+    width: 100px;
+    height: 35px;
+    border-radius: 20px;
+    border: none;
+    background-color: red;
+    color: white;
+}
+.input,.input2,.input3,.input4{
+    margin-bottom: 20px;
+    border-radius: 5px;
+    height: 25px;
+    width: 200px;
+    text-align: center;
+}
+.input1{
+    margin-bottom: 20px;
+    border-radius: 5px;
+    height: 25px;
+    width: 250px;
+    text-align: center;
+}
+.btnadd{
+    margin-left: 20px;
+    width: 100px;
+    height: 30px;
+    border: none;
+    background-color: rgba(0, 128, 0, 0.721);
+    
+    border-radius: 15px;
+    color:  white;
+}
+
+.tr{
+    height: 2px;
+}
+.btnadd:hover{
+    background-color: white;
+    color: rgba(0, 128, 0, 0.721);
+    border: 1px solid rgba(0, 128, 0, 0.721);
+}
+.img{
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+
+}
+.btndelet:hover{
+background-color: white;
+color: red;
+border: 1px solid red;
+}
+.cre{
+   
+    border-bottom: 1px solid black;
+}
+
+body{
+  scrollbar-color: black;
+  background: rgb(177,175,218);
+background: linear-gradient(20deg, rgba(177,175,218,1) 0%, rgba(255,115,80,0.31985294117647056) 22%, rgba(219,208,255,1) 37%, rgba(219,165,255,1) 53%, rgba(213,207,212,1) 63%, rgba(255,190,220,1) 75%, rgba(0,0,0,1) 100%);
+  background-position: center;
+  background-size: cover;
+  height: 95vh;
+}
+.box{
+    overflow-y: hidden;
+    display: flex;
+    margin: auto;
+    border: 1px solid black;
+    width:  90%;
+    margin: auto;
+    height: 500px;
+    border-radius: 10px;
+    background-color: white;
+    scrollbar-width: 200px;
+    gap: 10px;
+    text-align: center;
+}
+
+
+.name,.id,.h3,.day{
+    margin-left: 10px;
+}
