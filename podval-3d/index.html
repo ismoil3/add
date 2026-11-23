@@ -164,7 +164,7 @@
   <div class="panel" id="section-panel">
     <h2>Буриш аз паҳлу</h2>
     <div class="section-box" id="section"></div>
-    <p class="note">Хати ғафс — фарш. Сатҳи ±0,00 — фарши қисми калон. Одам барои муқоиса 1,75 м аст.</p>
+    <p class="note">Хати ғафс — фарш. Сатҳи ±0,00 — фарши қисми калон.</p>
   </div>
 
   <div class="grid2" id="settings">
@@ -554,9 +554,6 @@
     }
 
     // ----- people for scale -----
-    personA = person(P.la * 0.55, 0, -w2 + 2.2, 0x3b4540);
-    personA.visible = state.view !== "in";
-    person(P.la + P.lb * 0.6, yB, -w2 + 2.2, 0x2f5d86);
 
     // ----- dimensions -----
     const front = w2 + T + 0.7, yl = 0.05;
@@ -815,7 +812,6 @@
       const top = c.x - COL / 2 >= P.la ? yBt : P.ha;
       s += rect(c.x - COL / 2, c.x < P.la ? (c.x + COL / 2 > P.la ? yB : 0) : yB, c.x + COL / 2, top, solid, 'fill-opacity="0.8"');
     });
-    s += man(P.la * 0.55 + 0.4, 0) + man(P.la + P.lb * 0.6, yB);
     s += t(X(P.la * 0.75), Y(P.ha / 2) + 5, "A · h " + fmt(P.ha) + " м", "var(--fg)", "middle", 15);
     s += t(X(P.la + P.lb * 0.6) + 20, Y((yB + yBt) / 2) + 5, "B · h " + fmt(P.hb) + " м", "var(--fg)", "start", 15);
     if (P.drop) s += t(X(P.la) + 6, Y(yB) - 8, "−" + fmt(P.drop * 100, 0) + " см", "#c0392b", "start", 12);
