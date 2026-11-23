@@ -188,6 +188,10 @@
   const SLAB = 0.15;  // floor slab under the lowest floor
   const CEIL = 0.2;   // ceiling slab
   const STAIR_W = 1.2, TREAD = 0.28;
+  const STAIR_Z = 1.1;   // stair centre, moved beside the column on the centre line
+  const COL = 0.4;       // column size, 40 × 40 cm
+  // columns on the centre line: middle of A, and 4.5 m further at the front of B
+  const columns = () => [{ x: P.la / 2, z: 0 }, { x: P.la / 2 + 4.5, z: 0 }].filter((c) => c.x + COL / 2 < P.la + P.lb - 0.1);
   const DOOR_X = 4, DOOR_W = 0.9, DOOR_H = 2.05;
   const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const fmt = (v, d = 2) => Number(v).toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: d });
@@ -427,17 +431,17 @@
     const G = layout();
     const { L, w2, yB, yBt, bottom } = G;
     ox = -L / 2;
-    const zS = STAIR_W / 2;
+    const zS = STAIR_W / 2, z0s = STAIR_Z - zS, z1s = STAIR_Z + zS;
 
     // ----- floors -----
     const fA = { top: "tile", side: "concrete" }, fB = { top: "concrete", side: "concrete" };
     if (G.n) {
       const px = P.la - G.pit;
       box(walls, 0, px, bottom, 0, -w2, w2, fA);
-      box(walls, px, P.la, bottom, 0, -w2, -zS, fA);
-      box(walls, px, P.la, bottom, 0, zS, w2, fA);
+      box(walls, px, P.la, bottom, 0, -w2, z0s, fA);
+      box(walls, px, P.la, bottom, 0, z1s, w2, fA);
       for (let i = 1; i < G.n; i++) {
-        box(walls, px + (i - 1) * TREAD, px + i * TREAD, bottom, -i * G.rise, -zS, zS, { top: "wood", side: "concrete" });
+        box(walls, px + (i - 1) * TREAD, px + i * TREAD, bottom, -i * G.rise, z0s, z1s, { top: "wood", side: "concrete" });
       }
     } else {
       box(walls, 0, P.la, bottom, 0, -w2, w2, fA);
@@ -515,6 +519,16 @@
       root.add(pl);
     });
 
+    // ----- columns -----
+    columns().forEach((c) => {
+      const top = c.x - COL / 2 >= P.la ? yBt : P.ha;
+      box(walls, c.x - COL / 2, c.x + COL / 2, bottom, top, c.z - COL / 2, c.z + COL / 2, "concrete");
+    });
+    if (columns().length > 1) {
+      const [a, b2] = columns();
+      dim(a.x, 0.05, a.z - 0.6, b2.x, 0.05, b2.z - 0.6, fmt(b2.x - a.x) + " м", 0x6b4a2b);
+    }
+
     // ----- people for scale -----
     personA = person(P.la * 0.55, 0, -w2 + 2.2, 0x3b4540);
     personA.visible = state.view !== "in";
@@ -555,7 +569,7 @@
   function floorAt(x, z) {
     const G = layout();
     if (x >= P.la) return G.yB;
-    if (G.n && x >= P.la - G.pit && Math.abs(z) < STAIR_W / 2) {
+    if (G.n && x >= P.la - G.pit && Math.abs(z - STAIR_Z) < STAIR_W / 2) {
       const i = Math.floor((x - (P.la - G.pit)) / TREAD) + 1;
       return -Math.min(i, G.n - 1) * G.rise;
     }
@@ -571,6 +585,14 @@
     const L = P.la + P.lb, w2 = P.w / 2;
     fp.x = Math.min(L - PAD, Math.max(PAD, fp.x));
     fp.z = Math.min(w2 - PAD, Math.max(-w2 + PAD, fp.z));
+    // keep out of the columns
+    columns().forEach((c) => {
+      const r = COL / 2 + 0.3, dx = fp.x - c.x, dz = fp.z - c.z;
+      if (Math.abs(dx) < r && Math.abs(dz) < r) {
+        if (r - Math.abs(dx) < r - Math.abs(dz)) fp.x = c.x + Math.sign(dx || 1) * r;
+        else fp.z = c.z + Math.sign(dz || 1) * r;
+      }
+    });
   }
   function targetEye() { return Math.min(floorAt(fp.x, fp.z) + EYE, ceilAt(fp.x) - 0.18); }
   function placeFp(snap) {
@@ -730,7 +752,11 @@
       s += `<path d="${d}" fill="none" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
       s += t(X((E.s0 + E.s1) / 2), Y(E.m * E.r * 0.5) - 10, "зинапояи даромад", "var(--muted)", "middle", 12);
     }
-    s += man(P.la * 0.55, 0) + man(P.la + P.lb * 0.6, yB);
+    columns().forEach((c) => {
+      const top = c.x - COL / 2 >= P.la ? yBt : P.ha;
+      s += rect(c.x - COL / 2, c.x < P.la ? (c.x + COL / 2 > P.la ? yB : 0) : yB, c.x + COL / 2, top, solid, 'fill-opacity="0.8"');
+    });
+    s += man(P.la * 0.55 + 0.4, 0) + man(P.la + P.lb * 0.6, yB);
     s += t(X(P.la * 0.75), Y(P.ha / 2) + 5, "A · h " + fmt(P.ha) + " м", "var(--fg)", "middle", 15);
     s += t(X(P.la + P.lb * 0.6) + 20, Y((yB + yBt) / 2) + 5, "B · h " + fmt(P.hb) + " м", "var(--fg)", "start", 15);
     if (P.drop) s += t(X(P.la) + 6, Y(yB) - 8, "−" + fmt(P.drop * 100, 0) + " см", "#c0392b", "start", 12);
@@ -754,7 +780,8 @@
       `Шифти B ${fmt((P.ha - G.yBt) * 100, 0)} см пасттар аз шифти A аст.`,
       `Деворҳо (периметр, дарунӣ): ${fmt(2 * (P.la + P.lb) + 2 * P.w)} м. Ғафсии девор дар модел: ${fmt(T * 100, 0)} см.`,
     ];
-    if (G.n) items.push(`Зинапояи байни A ва B: ${G.n} зина × ${fmt(G.rise * 100, 0)} см, паҳнӣ ${fmt(STAIR_W)} м. Дар қисми A кофта шудааст, то сар ба шифти паст нахӯрад.`);
+    if (G.n) items.push(`Зинапояи байни A ва B: ${G.n} зина × ${fmt(G.rise * 100, 0)} см, паҳнӣ ${fmt(STAIR_W)} м. Дар қисми A кофта шудааст, то сар ба шифти паст нахӯрад. Дар паҳлӯи сутун ҷойгир аст.`);
+    columns().forEach((c, i) => items.push(`Сутуни ${i + 1}: ${fmt(COL * 100, 0)} × ${fmt(COL * 100, 0)} см, ${fmt(c.x)} м аз девори чап, дар миёнаи паҳнӣ (${fmt(P.w / 2)} м).`));
     if (G.door) items.push(`Дари даромад: дар девори пеши A, ${fmt(DOOR_X)} м аз кунҷи чап, паҳнӣ ${fmt(DOOR_W * 100, 0)} см, баландӣ ${fmt(G.door.h * 100, 0)} см.`);
     items.push("Тирезаҳо ва чароғҳо намуна мебошанд. Ҷояшонро гӯед, дуруст мекунам.");
     document.getElementById("calc-note").innerHTML = items.map((x) => `<li>${x}</li>`).join("");
