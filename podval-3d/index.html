@@ -86,6 +86,15 @@
     flex: 1 1 260px; min-width: 0; font: 400 14px var(--body); color: var(--fg); background: var(--bg);
     border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px;
   }
+  .walk {
+    position: absolute; right: 12px; bottom: 34px; display: grid; gap: 6px;
+    grid-template-areas: ". f ." "l . r" ". b ."; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px);
+  }
+  .walk button {
+    font: 600 18px var(--body); color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 50%; opacity: 0.88; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  .walk button[aria-pressed="true"] { background: var(--on); color: var(--on-fg); }
   body.viewer .stage { height: clamp(420px, 82vh, 860px); }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -109,7 +118,13 @@
         <button type="button" id="t-dim" aria-pressed="true">Андозаҳо</button>
       </div>
     </div>
-    <div class="hint">Гардонидан: кашидан · Калон/хурд: ду ангушт ё чархак · Ҳаракат: ду ангушт ё тугмаи рост</div>
+    <div class="walk" id="walk" hidden>
+      <button type="button" data-m="1,0" aria-label="Пеш" style="grid-area:f">▲</button>
+      <button type="button" data-m="0,-1" aria-label="Чап" style="grid-area:l">◀</button>
+      <button type="button" data-m="0,1" aria-label="Рост" style="grid-area:r">▶</button>
+      <button type="button" data-m="-1,0" aria-label="Қафо" style="grid-area:b">▼</button>
+    </div>
+    <div class="hint" id="hint">Гардонидан: кашидан · Калон/хурд: ду ангушт ё чархак · Ҳаракат: ду ангушт ё тугмаи рост</div>
   </div>
 
   <div class="panel" id="share-panel">
@@ -372,6 +387,7 @@
     [body, legs, head].forEach((o) => { o.castShadow = true; g.add(o); });
     g.position.set(ox + x, y, z);
     root.add(g);
+    return g;
   }
 
   function disposeAll(obj) {
@@ -475,7 +491,7 @@
     }
 
     // ----- ceilings (toggle) -----
-    const cA = { top: "concrete", side: "concrete" };
+    const cA = { top: "concrete", side: "plaster" };
     if (E) {
       const hx0 = E.s0 + (E.s1 - E.s0) * 0.35, hx1 = E.s1 + 0.27, hz = -w2 + E.width;
       box(ceiling, 0, P.la, P.ha, P.ha + CEIL, hz, w2, cA);
@@ -500,7 +516,8 @@
     });
 
     // ----- people for scale -----
-    person(P.la * 0.55, 0, -w2 + 2.2, 0x3b4540);
+    personA = person(P.la * 0.55, 0, -w2 + 2.2, 0x3b4540);
+    personA.visible = state.view !== "in";
     person(P.la + P.lb * 0.6, yB, -w2 + 2.2, 0x2f5d86);
 
     // ----- dimensions -----
@@ -529,23 +546,119 @@
     document.getElementById("t-ceil").setAttribute("aria-pressed", String(state.ceiling));
     document.getElementById("t-dim").setAttribute("aria-pressed", String(state.dims));
   }
+  let personA = null;
+
+  // ---------- walk-through (first person) ----------
+  // position in plan coordinates; the eye follows the floor and ducks under the low part
+  const fp = { x: 4.45, z: 0, yaw: 0.9, pitch: -0.08, tYaw: 0.9, tPitch: -0.08, eye: 1.6, move: { f: 0, s: 0 }, keys: {} };
+  const EYE = 1.6, PAD = 0.5, SPEED = 1.4;
+  function floorAt(x, z) {
+    const G = layout();
+    if (x >= P.la) return G.yB;
+    if (G.n && x >= P.la - G.pit && Math.abs(z) < STAIR_W / 2) {
+      const i = Math.floor((x - (P.la - G.pit)) / TREAD) + 1;
+      return -Math.min(i, G.n - 1) * G.rise;
+    }
+    return 0;
+  }
+  function ceilAt(x) {
+    const G = layout();
+    let c = Infinity;
+    for (let dx = -0.45; dx <= 0.45; dx += 0.15) c = Math.min(c, x + dx >= P.la ? G.yBt : P.ha);
+    return c;
+  }
+  function clampFp() {
+    const L = P.la + P.lb, w2 = P.w / 2;
+    fp.x = Math.min(L - PAD, Math.max(PAD, fp.x));
+    fp.z = Math.min(w2 - PAD, Math.max(-w2 + PAD, fp.z));
+  }
+  function targetEye() { return Math.min(floorAt(fp.x, fp.z) + EYE, ceilAt(fp.x) - 0.18); }
+  function placeFp(snap) {
+    const e = targetEye();
+    fp.eye = snap ? e : fp.eye + (e - fp.eye) * 0.12;
+    camera.position.set(ox + fp.x, fp.eye, fp.z);
+    const cp = Math.cos(fp.pitch);
+    camera.lookAt(ox + fp.x + Math.sin(fp.yaw) * cp, fp.eye + Math.sin(fp.pitch), fp.z - Math.cos(fp.yaw) * cp);
+  }
+  function enterInside() {
+    controls.enabled = false;
+    camera.fov = 70; camera.updateProjectionMatrix();
+    const w2 = P.w / 2, door = layout().door;
+    fp.x = door ? (door.a + door.b) / 2 : 1.2; fp.z = w2 - 0.9;
+    fp.yaw = fp.tYaw = 0.75; fp.pitch = fp.tPitch = -0.06;
+    clampFp(); placeFp(true);
+    document.getElementById("walk").hidden = false;
+    document.getElementById("hint").textContent = "Нигоҳ кардан: кашидан · Рафтан: тугмаҳо ё W A S D";
+    if (personA) personA.visible = false;
+  }
+  function exitInside() {
+    controls.enabled = true;
+    camera.fov = 42; camera.updateProjectionMatrix();
+    document.getElementById("walk").hidden = true;
+    document.getElementById("hint").textContent = "Гардонидан: кашидан · Калон/хурд: ду ангушт ё чархак · Ҳаракат: ду ангушт ё тугмаи рост";
+    if (personA) personA.visible = true;
+  }
+  // drag to look around
+  let drag = null;
+  renderer.domElement.addEventListener("pointerdown", (e) => {
+    if (state.view !== "in") return;
+    drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    renderer.domElement.setPointerCapture(e.pointerId);
+  });
+  renderer.domElement.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    fp.tYaw -= (e.clientX - drag.x) * 0.005;
+    fp.tPitch = Math.max(-1.1, Math.min(1.1, fp.tPitch + (e.clientY - drag.y) * 0.004));
+    drag.x = e.clientX; drag.y = e.clientY;
+  });
+  ["pointerup", "pointercancel"].forEach((t) => renderer.domElement.addEventListener(t, () => (drag = null)));
+  // hold-to-walk buttons
+  document.querySelectorAll("#walk button").forEach((b) => {
+    const [f, sd] = b.dataset.m.split(",").map(Number);
+    const on = (e) => { e.preventDefault(); fp.move.f = f; fp.move.s = sd; b.setAttribute("aria-pressed", "true"); };
+    const off = () => { fp.move.f = 0; fp.move.s = 0; b.setAttribute("aria-pressed", "false"); };
+    b.addEventListener("pointerdown", on);
+    ["pointerup", "pointerleave", "pointercancel"].forEach((t) => b.addEventListener(t, off));
+    b.addEventListener("contextmenu", (e) => e.preventDefault());
+  });
+  const KEYS = { KeyW: [1, 0], ArrowUp: [1, 0], KeyS: [-1, 0], ArrowDown: [-1, 0], KeyA: [0, -1], ArrowLeft: [0, -1], KeyD: [0, 1], ArrowRight: [0, 1] };
+  window.addEventListener("keydown", (e) => { if (state.view === "in" && KEYS[e.code] && !/INPUT/.test(document.activeElement.tagName)) { fp.keys[e.code] = 1; e.preventDefault(); } });
+  window.addEventListener("keyup", (e) => { delete fp.keys[e.code]; });
+  let last = performance.now();
+  function stepFp(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (state.view !== "in") return;
+    let f = fp.move.f, sd = fp.move.s;
+    Object.keys(fp.keys).forEach((k) => { f += KEYS[k][0]; sd += KEYS[k][1]; });
+    f = Math.max(-1, Math.min(1, f)); sd = Math.max(-1, Math.min(1, sd));
+    const sy = Math.sin(fp.yaw), cy = Math.cos(fp.yaw), d = SPEED * dt;
+    fp.x += (sy * f + cy * sd) * d;
+    fp.z += (-cy * f + sy * sd) * d;
+    clampFp();
+    fp.yaw += (fp.tYaw - fp.yaw) * 0.25;
+    fp.pitch += (fp.tPitch - fp.pitch) * 0.25;
+    placeFp(false);
+  }
+
   function view(kind) {
+    const wasIn = state.view === "in";
     state.view = kind;
     const L = P.la + P.lb, d = Math.max(L, P.w);
     if (kind === "in") {
       state.ceiling = true; state.dims = false;
-      camera.position.set(-L / 2 + 1.0, 1.6, P.w / 2 - 1.0);
-      controls.target.set(-L / 2 + P.la + 0.8, 0.4, -0.6);
+      enterInside();
     } else {
+      if (wasIn) exitInside();
       state.ceiling = false;
       controls.target.set(0, 0.4, 0);
       if (kind === "top") camera.position.set(0, d * 1.9, 0.01);
       else if (kind === "side") camera.position.set(0, 0.8, d * 1.6);
       else camera.position.set(d * 0.7, d * 0.85, d * 1.05);
+      controls.update();
     }
     ceiling.visible = state.ceiling; dims.visible = state.dims;
     setPressed();
-    controls.update();
   }
   document.getElementById("v-3d").onclick = () => view("3d");
   document.getElementById("v-in").onclick = () => view("in");
@@ -566,7 +679,7 @@
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", setBg);
   new MutationObserver(setBg).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
-  (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+  (function loop(now) { requestAnimationFrame(loop); if (state.view === "in") stepFp(now || performance.now()); else controls.update(); renderer.render(scene, camera); })();
 
   // ---------- section drawing ----------
   function drawSection(G) {
