@@ -165,7 +165,7 @@
 <script>
 (function () {
   const DEF = { la: 9, lb: 4, w: 8, ha: 2.5, hb: 2, drop: 0.5 };
-  const ARTIFACT_URL = "https://claude.ai/artifact/6Lm23muQTk6wbu4qKPq7jy";
+  const ARTIFACT_URL = /github\.io$/.test(location.hostname) ? location.origin + location.pathname : "https://claude.ai/artifact/6Lm23muQTk6wbu4qKPq7jy";
   const SHARE_ORDER = ["la", "lb", "w", "ha", "hb", "drop"];
   const P = Object.assign({}, DEF);
   const ids = Object.keys(DEF);
