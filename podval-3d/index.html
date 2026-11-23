@@ -390,11 +390,6 @@
       for (let i = 1; i < G.n; i++) {
         box(walls, px + (i - 1) * TREAD, px + i * TREAD, bottom, -i * G.rise, -zS, zS, { top: "wood", side: "concrete" });
       }
-      railing(px, P.la, -zS, -zS, 0);
-      railing(px, P.la, zS, zS, 0);
-      // guard rail along the drop into B
-      railing(P.la - 0.04, P.la - 0.04, -w2, -zS, 0);
-      railing(P.la - 0.04, P.la - 0.04, zS, w2, 0);
     } else {
       box(walls, 0, P.la, bottom, 0, -w2, w2, fA);
     }
@@ -568,7 +563,6 @@
       for (let i = 1; i < G.n; i++) d += ` V${Y(-i * G.rise)} H${X(px + i * TREAD)}`;
       d += ` V${Y(yB)}`;
       stairs = `<path d="${d} V${Y(bot)} H${X(px)} Z" fill="${solid}" fill-opacity="0.55"/><path d="${d}" fill="none" stroke="var(--fg)" stroke-width="3"/>`;
-      s += `<line x1="${X(px)}" y1="${Y(0.95)}" x2="${X(P.la)}" y2="${Y(0.95)}" stroke="var(--fg)" stroke-width="1.5"/>`;
     }
     s += stairs;
     s += rect(P.la, bot, L, yB, solid, 'fill-opacity="0.55"');
