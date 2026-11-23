@@ -95,6 +95,29 @@
     border-radius: 50%; opacity: 0.88; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
   }
   .walk button[aria-pressed="true"] { background: var(--on); color: var(--on-fg); }
+  /* full screen: real Fullscreen API where allowed, otherwise the stage covers the window */
+  .stage.full {
+    position: fixed; inset: 0; z-index: 50; height: 100%; width: 100%; border-radius: 0;
+  }
+  .stage:fullscreen { height: 100%; width: 100%; border-radius: 0; }
+  .stage.full .bar, .stage:fullscreen .bar {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    left: calc(10px + env(safe-area-inset-left, 0px));
+    right: calc(10px + env(safe-area-inset-right, 0px));
+  }
+  .stage.full .walk, .stage:fullscreen .walk {
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(34px + env(safe-area-inset-bottom, 0px));
+  }
+  .stage.full .hint, .stage:fullscreen .hint {
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  body.no-scroll { overflow: hidden; }
+  /* phone turned sideways: let the model fill the screen height */
+  @media (orientation: landscape) and (max-height: 520px) {
+    .stage { height: calc(100vh - 24px); }
+  }
   body.viewer .stage { height: clamp(420px, 82vh, 860px); }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -116,6 +139,7 @@
       <div class="grp">
         <button type="button" id="t-ceil" aria-pressed="false">Шифт</button>
         <button type="button" id="t-dim" aria-pressed="true">Андозаҳо</button>
+        <button type="button" id="t-full" aria-pressed="false">⛶ Пурра</button>
       </div>
     </div>
     <div class="walk" id="walk" hidden>
@@ -687,6 +711,41 @@
   document.getElementById("v-top").onclick = () => view("top");
   document.getElementById("v-side").onclick = () => view("side");
   document.getElementById("t-ceil").onclick = () => { state.ceiling = !state.ceiling; ceiling.visible = state.ceiling; setPressed(); };
+  // ---------- full screen ----------
+  const fullBtn = document.getElementById("t-full");
+  const realFull = () => document.fullscreenElement || document.webkitFullscreenElement;
+  function setFullUi(on) {
+    fullBtn.setAttribute("aria-pressed", String(on));
+    fullBtn.textContent = on ? "✕ Баромадан" : "⛶ Пурра";
+  }
+  function enterFull() {
+    const req = stage.requestFullscreen || stage.webkitRequestFullscreen;
+    const fallback = () => { stage.classList.add("full"); document.body.classList.add("no-scroll"); setFullUi(true); };
+    if (!req) return fallback();
+    try {
+      const r = req.call(stage);
+      if (r && r.then) r.then(() => {
+        setFullUi(true);
+        try { screen.orientation && screen.orientation.lock && screen.orientation.lock("landscape").catch(() => {}); } catch (e) {}
+      }, fallback);
+      else setFullUi(true);
+    } catch (e) { fallback(); }
+  }
+  function exitFull() {
+    if (realFull()) {
+      try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) {}
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    }
+    stage.classList.remove("full"); document.body.classList.remove("no-scroll");
+    setFullUi(false);
+  }
+  fullBtn.onclick = () => (fullBtn.getAttribute("aria-pressed") === "true" ? exitFull() : enterFull());
+  ["fullscreenchange", "webkitfullscreenchange"].forEach((t) => document.addEventListener(t, () => {
+    if (!realFull() && !stage.classList.contains("full")) setFullUi(false);
+    resize();
+  }));
+  window.addEventListener("keydown", (e) => { if (e.key === "Escape" && stage.classList.contains("full")) exitFull(); });
+  window.addEventListener("orientationchange", () => setTimeout(resize, 250));
   document.getElementById("t-dim").onclick = () => { state.dims = !state.dims; dims.visible = state.dims; setPressed(); };
 
   function resize() {
