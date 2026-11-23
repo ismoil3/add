@@ -1,0 +1,356 @@
+<title>Подвали 13 × 8</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+  /* Layout: one column — 3D stage first, then section drawing, then editable sizes */
+  :root {
+    --bg: #f3f4f1;
+    --surface: #ffffff;
+    --fg: #1d2420;
+    --muted: #5d6862;
+    --line: #d6dbd5;
+    --stage: #e6e9e3;
+    --zone-a: #c98b4f;
+    --zone-b: #4f7fa8;
+    --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    --body: "Inter", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151916; --surface: #1e2420; --fg: #e8ece7; --muted: #9aa59e;
+      --line: #333c36; --stage: #232a25; --zone-a: #dba06a; --zone-b: #74a2c9;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151916; --surface: #1e2420; --fg: #e8ece7; --muted: #9aa59e;
+    --line: #333c36; --stage: #232a25; --zone-a: #dba06a; --zone-b: #74a2c9;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--body);
+    line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 48px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 24px; }
+  h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); letter-spacing: -0.01em; }
+  h2 { font-size: 1.15rem; }
+  .lead { color: var(--muted); margin: 6px 0 0; max-width: 65ch; }
+  .stage {
+    position: relative; background: var(--stage); border-radius: 10px;
+    height: clamp(360px, 62vh, 620px); overflow: hidden; touch-action: none;
+  }
+  .stage canvas { display: block; width: 100%; height: 100%; }
+  .hint {
+    position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted);
+    pointer-events: none;
+  }
+  .views { position: absolute; right: 10px; top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .views button, .reset {
+    font: 500 13px var(--body); color: var(--fg); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer;
+  }
+  .views button:focus-visible, .reset:focus-visible, input:focus-visible { outline: 2px solid var(--zone-b); outline-offset: 2px; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+  .zone-tag { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+  .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+  label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+  input[type=number] {
+    font: 500 16px var(--body); color: var(--fg); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%;
+    box-sizing: border-box; font-variant-numeric: tabular-nums;
+  }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  th { font-weight: 500; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  td.n { text-align: right; }
+  .section-box { overflow-x: auto; }
+  .section-box svg { display: block; width: 100%; min-width: 520px; height: auto; }
+  .note { font-size: 13px; color: var(--muted); margin: 0; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Подвали 13 × 8 м</h1>
+    <p class="lead">Ду қисм: қисми калон 9 × 8 м бо баландии 2,50 м ва қисми хурд 4 × 8 м, ки фаршаш 80 см пасттар аст ва баландиаш 1,90 м. Моделро бо ангушт ё муш гардонед, андозаҳоро дар поён иваз кунед.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="views">
+      <button type="button" id="v-3d">3D</button>
+      <button type="button" id="v-top">Аз боло</button>
+      <button type="button" id="v-side">Аз паҳлу</button>
+    </div>
+    <div class="hint">Гардонидан: кашидан · Калон/хурд: ду ангушт ё чархак</div>
+  </div>
+
+  <div class="panel">
+    <h2>Буриш аз паҳлу (дарозии 13 м)</h2>
+    <div class="section-box" id="section"></div>
+    <p class="note">Хати сиёҳ — фарши қисми калон (сатҳи 0). Одам барои муқоиса 1,75 м аст.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>Андозаҳо</h2>
+      <span class="zone-tag"><span class="sw" style="background:var(--zone-a)"></span>Қисми калон (A)</span>
+      <div class="fields">
+        <label for="la">Дарозӣ, м<input id="la" type="number" step="0.01" min="0.5" value="9"></label>
+        <label for="ha">Баландӣ, м<input id="ha" type="number" step="0.01" min="0.5" value="2.5"></label>
+      </div>
+      <span class="zone-tag"><span class="sw" style="background:var(--zone-b)"></span>Қисми пастшуда (B)</span>
+      <div class="fields">
+        <label for="lb">Дарозӣ, м<input id="lb" type="number" step="0.01" min="0.5" value="4"></label>
+        <label for="hb">Баландӣ, м<input id="hb" type="number" step="0.01" min="0.5" value="1.9"></label>
+        <label for="drop">Фарш пасттар, м<input id="drop" type="number" step="0.01" min="-3" value="0.8"></label>
+      </div>
+      <span class="zone-tag">Умумӣ</span>
+      <div class="fields">
+        <label for="w">Паҳнӣ (ҳарду қисм), м<input id="w" type="number" step="0.01" min="0.5" value="8"></label>
+      </div>
+      <button type="button" class="reset" id="reset">Андозаҳои аввала</button>
+    </div>
+
+    <div class="panel">
+      <h2>Ҳисоб</h2>
+      <table>
+        <thead><tr><th>Қисм</th><th class="n" style="text-align:right">Масоҳат</th><th style="text-align:right">Ҳаҷм</th></tr></thead>
+        <tbody id="calc"></tbody>
+      </table>
+      <p class="note" id="calc-note"></p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  const DEF = { la: 9, lb: 4, w: 8, ha: 2.5, hb: 1.9, drop: 0.8 };
+  const P = Object.assign({}, DEF);
+  const ids = Object.keys(DEF);
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const fmt = (v, d = 2) => Number(v).toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: d });
+
+  // ---------- 3D ----------
+  const stage = document.getElementById("stage");
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  stage.prepend(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.target.set(0, 0.6, 0);
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a80, 0.75));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.55);
+  sun.position.set(8, 14, 10);
+  scene.add(sun);
+
+  let group = new THREE.Group();
+  scene.add(group);
+
+  function label(text, color) {
+    const c = document.createElement("canvas");
+    const ctx = c.getContext("2d");
+    const fs = 44;
+    ctx.font = `600 ${fs}px Inter, system-ui, sans-serif`;
+    const tw = ctx.measureText(text).width;
+    c.width = Math.ceil(tw + 36); c.height = fs + 24;
+    ctx.font = `600 ${fs}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    const r = 14;
+    ctx.beginPath();
+    ctx.moveTo(r, 0); ctx.arcTo(c.width, 0, c.width, c.height, r); ctx.arcTo(c.width, c.height, 0, c.height, r);
+    ctx.arcTo(0, c.height, 0, 0, r); ctx.arcTo(0, 0, c.width, 0, r); ctx.fill();
+    ctx.fillStyle = color || "#1d2420";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, 18, c.height / 2 + 2);
+    const tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.LinearFilter;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+    const h = 0.42;
+    s.scale.set(h * c.width / c.height, h, 1);
+    s.renderOrder = 10;
+    return s;
+  }
+
+  function dimLine(a, b, color) {
+    const g = new THREE.BufferGeometry().setFromPoints([a, b]);
+    const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color, depthTest: false }));
+    l.renderOrder = 9;
+    return l;
+  }
+
+  function zone(x0, x1, y0, y1, wallHex, floorHex) {
+    const L = x1 - x0, H = y1 - y0;
+    const wall = new THREE.MeshStandardMaterial({ color: wallHex, side: THREE.BackSide, roughness: 0.95 });
+    const floor = new THREE.MeshStandardMaterial({ color: floorHex, side: THREE.BackSide, roughness: 1 });
+    // box faces: +x, -x, +y, -y, +z, -z  (BackSide = see inside, near walls hide)
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(L, H, P.w), [wall, wall, wall, floor, wall, wall]);
+    mesh.position.set(x0 + L / 2, y0 + H / 2, 0);
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), new THREE.LineBasicMaterial({ color: 0x2a302c }));
+    edges.position.copy(mesh.position);
+    // floor grid, 1 m cells
+    const pts = [];
+    for (let x = Math.ceil(x0); x <= x1; x++) pts.push(new THREE.Vector3(x, y0 + 0.005, -P.w / 2), new THREE.Vector3(x, y0 + 0.005, P.w / 2));
+    for (let z = -Math.floor(P.w / 2); z <= P.w / 2; z++) pts.push(new THREE.Vector3(x0, y0 + 0.005, z), new THREE.Vector3(x1, y0 + 0.005, z));
+    const grid = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.12 }));
+    group.add(mesh, edges, grid);
+  }
+
+  function person(x, y, z) {
+    const m = new THREE.MeshStandardMaterial({ color: 0x3b4540 });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 1.52, 16), m);
+    body.position.set(x, y + 0.76, z);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.115, 16, 12), m);
+    head.position.set(x, y + 1.75 - 0.115, z);
+    group.add(body, head);
+  }
+
+  function build() {
+    scene.remove(group);
+    group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+    group = new THREE.Group();
+    scene.add(group);
+
+    const L = P.la + P.lb, ox = -L / 2, w2 = P.w / 2;
+    const yB = -P.drop, yBtop = -P.drop + P.hb;
+    zone(ox, ox + P.la, 0, P.ha, 0xece4d8, 0xc98b4f);
+    zone(ox + P.la, ox + L, yB, yBtop, 0xdfe6ec, 0x4f7fa8);
+
+    const ink = 0x1d2420, front = w2 + 0.6;
+    const yLow = Math.min(0, yB);
+    // lengths along the front
+    group.add(dimLine(new THREE.Vector3(ox, yLow, front), new THREE.Vector3(ox + P.la, yLow, front), ink));
+    group.add(dimLine(new THREE.Vector3(ox + P.la, yLow, front), new THREE.Vector3(ox + L, yLow, front), ink));
+    let s = label(fmt(P.la) + " м", "#8a5523"); s.position.set(ox + P.la / 2, yLow, front); group.add(s);
+    s = label(fmt(P.lb) + " м", "#2f5d86"); s.position.set(ox + P.la + P.lb / 2, yLow, front); group.add(s);
+    // total length on the back
+    group.add(dimLine(new THREE.Vector3(ox, Math.max(P.ha, yBtop) + 0.4, -w2), new THREE.Vector3(ox + L, Math.max(P.ha, yBtop) + 0.4, -w2), ink));
+    s = label("ҳамагӣ " + fmt(L) + " м", "#1d2420"); s.position.set(0, Math.max(P.ha, yBtop) + 0.4, -w2); group.add(s);
+    // width on the left
+    group.add(dimLine(new THREE.Vector3(ox - 0.6, 0, -w2), new THREE.Vector3(ox - 0.6, 0, w2), ink));
+    s = label(fmt(P.w) + " м", "#1d2420"); s.position.set(ox - 0.6, 0, 0); group.add(s);
+    // heights at the back corners
+    group.add(dimLine(new THREE.Vector3(ox + 0.25, 0, -w2 + 0.25), new THREE.Vector3(ox + 0.25, P.ha, -w2 + 0.25), 0x8a5523));
+    s = label("h " + fmt(P.ha) + " м", "#8a5523"); s.position.set(ox + 0.25, P.ha / 2, -w2 + 0.25); group.add(s);
+    group.add(dimLine(new THREE.Vector3(ox + L - 0.25, yB, -w2 + 0.25), new THREE.Vector3(ox + L - 0.25, yBtop, -w2 + 0.25), 0x2f5d86));
+    s = label("h " + fmt(P.hb) + " м", "#2f5d86"); s.position.set(ox + L - 0.25, (yB + yBtop) / 2, -w2 + 0.25); group.add(s);
+    // floor step
+    if (P.drop !== 0) {
+      group.add(dimLine(new THREE.Vector3(ox + P.la, 0, w2), new THREE.Vector3(ox + P.la, yB, w2), 0xb0352b));
+      s = label((P.drop > 0 ? "−" : "+") + fmt(Math.abs(P.drop) * 100, 0) + " см", "#b0352b");
+      s.position.set(ox + P.la + 0.05, yB / 2, w2 + 0.1); group.add(s);
+    }
+    person(ox + P.la - 1.2, 0, -w2 + 1.5);
+    person(ox + P.la + P.lb / 2, yB, -w2 + 1.5);
+
+    drawSection();
+    calc();
+  }
+
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    renderer.setSize(r.width, r.height, false);
+    camera.aspect = r.width / r.height;
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage);
+
+  function setBg() { renderer.setClearColor(new THREE.Color(css("--stage") || "#e6e9e3")); }
+  setBg();
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", setBg);
+  new MutationObserver(setBg).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  function view(kind) {
+    const L = P.la + P.lb, d = Math.max(L, P.w);
+    controls.target.set(0, 0.6, 0);
+    if (kind === "top") camera.position.set(0, d * 1.9, 0.01);
+    else if (kind === "side") camera.position.set(0, 0.6, d * 1.6);
+    else camera.position.set(d * 0.75, d * 0.85, d * 1.05);
+    controls.update();
+  }
+  document.getElementById("v-3d").onclick = () => view("3d");
+  document.getElementById("v-top").onclick = () => view("top");
+  document.getElementById("v-side").onclick = () => view("side");
+
+  (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+
+  // ---------- section drawing ----------
+  function drawSection() {
+    const L = P.la + P.lb, k = 56, padL = 70, padR = 30, padT = 40, padB = 50;
+    const top = Math.max(P.ha, P.hb - P.drop), bot = Math.min(0, -P.drop);
+    const W = padL + L * k + padR, H = padT + (top - bot) * k + padB;
+    const X = (x) => padL + x * k, Y = (y) => padT + (top - y) * k;
+    const yB = -P.drop, yBt = -P.drop + P.hb;
+    const t = (x, y, s, fill, anchor = "middle", size = 13) =>
+      `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${size}" font-family="Inter, system-ui, sans-serif" fill="${fill}">${s}</text>`;
+    // person silhouette
+    const man = (x, y) => `<g fill="var(--muted)"><rect x="${X(x) - 6}" y="${Y(y + 1.52)}" width="12" height="${1.52 * k}" rx="5"/><circle cx="${X(x)}" cy="${Y(y + 1.635)}" r="${0.115 * k}"/></g>`;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Буриши подвал">`;
+    svg += `<rect x="${X(0)}" y="${Y(P.ha)}" width="${P.la * k}" height="${P.ha * k}" fill="var(--zone-a)" fill-opacity="0.22" stroke="var(--zone-a)" stroke-width="2"/>`;
+    svg += `<rect x="${X(P.la)}" y="${Y(yBt)}" width="${P.lb * k}" height="${P.hb * k}" fill="var(--zone-b)" fill-opacity="0.22" stroke="var(--zone-b)" stroke-width="2"/>`;
+    svg += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(P.la)}" y2="${Y(0)}" stroke="var(--fg)" stroke-width="3"/>`;
+    svg += `<line x1="${X(P.la)}" y1="${Y(yB)}" x2="${X(L)}" y2="${Y(yB)}" stroke="var(--fg)" stroke-width="3"/>`;
+    svg += man(P.la - 1, 0) + man(P.la + P.lb / 2, yB);
+    // height labels
+    svg += t(X(P.la / 2), Y(P.ha / 2) + 5, "A · h " + fmt(P.ha) + " м", "var(--fg)", "middle", 15);
+    svg += t(X(P.la + P.lb / 2) + 34, Y((yB + yBt) / 2) + 5, "B · h " + fmt(P.hb) + " м", "var(--fg)", "start", 15);
+    // level marks on the left
+    const lv = (y, s) => `<line x1="${padL - 8}" y1="${Y(y)}" x2="${X(L)}" y2="${Y(y)}" stroke="var(--line)" stroke-dasharray="4 4"/>` + t(padL - 12, Y(y) + 4, s, "var(--muted)", "end", 12);
+    svg = svg.replace("<rect", lv(0, "±0,00") + lv(P.ha, "+" + fmt(P.ha)) + (P.drop ? lv(yB, (yB < 0 ? "" : "+") + fmt(yB)) : "") + (Math.abs(yBt - P.ha) > 0.01 && Math.abs(yBt) > 0.01 ? lv(yBt, (yBt > 0 ? "+" : "") + fmt(yBt)) : "") + "<rect");
+    // lengths
+    const dy = H - 18;
+    svg += `<line x1="${X(0)}" y1="${dy - 10}" x2="${X(L)}" y2="${dy - 10}" stroke="var(--muted)"/>`;
+    [0, P.la, L].forEach((x) => (svg += `<line x1="${X(x)}" y1="${dy - 16}" x2="${X(x)}" y2="${dy - 4}" stroke="var(--muted)"/>`));
+    svg += t(X(P.la / 2), dy + 6, fmt(P.la) + " м", "var(--fg)") + t(X(P.la + P.lb / 2), dy + 6, fmt(P.lb) + " м", "var(--fg)");
+    // step
+    if (P.drop) svg += t(X(P.la) + 6, Y(yB / 2) + 4, (P.drop > 0 ? "−" : "+") + fmt(Math.abs(P.drop) * 100, 0) + " см", "#c0392b", "start", 12);
+    svg += "</svg>";
+    document.getElementById("section").innerHTML = svg;
+  }
+
+  // ---------- numbers ----------
+  function calc() {
+    const aA = P.la * P.w, aB = P.lb * P.w, vA = aA * P.ha, vB = aB * P.hb;
+    document.getElementById("calc").innerHTML =
+      `<tr><td>A · ${fmt(P.la)} × ${fmt(P.w)}</td><td class="n">${fmt(aA)} м²</td><td class="n">${fmt(vA)} м³</td></tr>` +
+      `<tr><td>B · ${fmt(P.lb)} × ${fmt(P.w)}</td><td class="n">${fmt(aB)} м²</td><td class="n">${fmt(vB)} м³</td></tr>` +
+      `<tr><td><b>Ҳамагӣ</b></td><td class="n"><b>${fmt(aA + aB)} м²</b></td><td class="n"><b>${fmt(vA + vB)} м³</b></td></tr>`;
+    const ceilB = P.hb - P.drop;
+    document.getElementById("calc-note").textContent =
+      `Шифти қисми B дар сатҳи ${fmt(ceilB)} м аз фарши A аст, яъне ${fmt(P.ha - ceilB)} м пасттар аз шифти A. ` +
+      `Деворҳо (периметр): ${fmt(2 * (P.la + P.lb) + 2 * P.w)} м.`;
+  }
+
+  // ---------- inputs ----------
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", () => {
+      const v = parseFloat(String(el.value).replace(",", "."));
+      if (!isFinite(v)) return;
+      if (id !== "drop" && v <= 0) return;
+      P[id] = v; build();
+    });
+  });
+  document.getElementById("reset").onclick = () => {
+    Object.assign(P, DEF);
+    ids.forEach((id) => (document.getElementById(id).value = DEF[id]));
+    build(); view("3d");
+  };
+
+  resize();
+  build();
+  view("3d");
+})();
+</script>
