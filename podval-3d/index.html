@@ -10,22 +10,26 @@
     --fg: #1d2420;
     --muted: #5d6862;
     --line: #d6dbd5;
-    --stage: #e6e9e3;
+    --stage: #dfe4de;
     --zone-a: #c98b4f;
     --zone-b: #4f7fa8;
+    --on: #1d2420;
+    --on-fg: #ffffff;
     --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
     --body: "Inter", "Segoe UI", system-ui, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #151916; --surface: #1e2420; --fg: #e8ece7; --muted: #9aa59e;
-      --line: #333c36; --stage: #232a25; --zone-a: #dba06a; --zone-b: #74a2c9;
+      --line: #333c36; --stage: #262d28; --zone-a: #dba06a; --zone-b: #74a2c9;
+      --on: #e8ece7; --on-fg: #151916;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #151916; --surface: #1e2420; --fg: #e8ece7; --muted: #9aa59e;
-    --line: #333c36; --stage: #232a25; --zone-a: #dba06a; --zone-b: #74a2c9;
+    --line: #333c36; --stage: #262d28; --zone-a: #dba06a; --zone-b: #74a2c9;
+    --on: #e8ece7; --on-fg: #151916;
     color-scheme: dark;
   }
   body {
@@ -42,19 +46,21 @@
   .lead { color: var(--muted); margin: 6px 0 0; max-width: 65ch; }
   .stage {
     position: relative; background: var(--stage); border-radius: 10px;
-    height: clamp(360px, 62vh, 620px); overflow: hidden; touch-action: none;
+    height: clamp(380px, 66vh, 660px); overflow: hidden; touch-action: none;
   }
   .stage canvas { display: block; width: 100%; height: 100%; }
   .hint {
     position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted);
-    pointer-events: none;
+    pointer-events: none; padding-right: 12px;
   }
-  .views { position: absolute; right: 10px; top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
-  .views button, .reset {
+  .bar { position: absolute; left: 10px; right: 10px; top: 10px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: space-between; pointer-events: none; }
+  .bar .grp { display: flex; gap: 6px; flex-wrap: wrap; pointer-events: auto; }
+  .bar button, .reset {
     font: 500 13px var(--body); color: var(--fg); background: var(--surface);
     border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer;
   }
-  .views button:focus-visible, .reset:focus-visible, input:focus-visible { outline: 2px solid var(--zone-b); outline-offset: 2px; }
+  .bar button[aria-pressed="true"] { background: var(--on); color: var(--on-fg); border-color: var(--on); }
+  .bar button:focus-visible, .reset:focus-visible, input:focus-visible { outline: 2px solid var(--zone-b); outline-offset: 2px; }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
   .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
   .zone-tag { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
@@ -69,32 +75,40 @@
   table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
   th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
   th { font-weight: 500; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
-  td.n { text-align: right; }
+  .n { text-align: right; }
   .section-box { overflow-x: auto; }
   .section-box svg { display: block; width: 100%; min-width: 520px; height: auto; }
   .note { font-size: 13px; color: var(--muted); margin: 0; }
+  ul.note { padding-left: 18px; display: grid; gap: 4px; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
 <div class="wrap">
   <header>
     <h1>Подвали 13 × 8 м</h1>
-    <p class="lead">Ду қисм: қисми калон 9 × 8 м бо баландии 2,50 м ва қисми хурд 4 × 8 м, ки фаршаш 80 см пасттар аст ва баландиаш 1,90 м. Моделро бо ангушт ё муш гардонед, андозаҳоро дар поён иваз кунед.</p>
+    <p class="lead">Қисми калон 9 × 8 м бо баландии 2,50 м. Қисми хурд 4 × 8 м: фаршаш 80 см пасттар, баландиаш 1,90 м, шифташ 1,40 м пасттар аз шифти калон. Моделро гардонед, «Аз дарун»-ро пахш кунед, андозаҳоро дар поён иваз кунед.</p>
   </header>
 
   <div class="stage" id="stage">
-    <div class="views">
-      <button type="button" id="v-3d">3D</button>
-      <button type="button" id="v-top">Аз боло</button>
-      <button type="button" id="v-side">Аз паҳлу</button>
+    <div class="bar">
+      <div class="grp">
+        <button type="button" id="v-3d" aria-pressed="true">3D</button>
+        <button type="button" id="v-in" aria-pressed="false">Аз дарун</button>
+        <button type="button" id="v-top" aria-pressed="false">Аз боло</button>
+        <button type="button" id="v-side" aria-pressed="false">Аз паҳлу</button>
+      </div>
+      <div class="grp">
+        <button type="button" id="t-ceil" aria-pressed="false">Шифт</button>
+        <button type="button" id="t-dim" aria-pressed="true">Андозаҳо</button>
+      </div>
     </div>
-    <div class="hint">Гардонидан: кашидан · Калон/хурд: ду ангушт ё чархак</div>
+    <div class="hint">Гардонидан: кашидан · Калон/хурд: ду ангушт ё чархак · Ҳаракат: ду ангушт ё тугмаи рост</div>
   </div>
 
   <div class="panel">
     <h2>Буриш аз паҳлу (дарозии 13 м)</h2>
     <div class="section-box" id="section"></div>
-    <p class="note">Хати сиёҳ — фарши қисми калон (сатҳи 0). Одам барои муқоиса 1,75 м аст.</p>
+    <p class="note">Хати ғафс — фарш. Сатҳи ±0,00 — фарши қисми калон. Одам барои муқоиса 1,75 м аст.</p>
   </div>
 
   <div class="grid2">
@@ -102,18 +116,18 @@
       <h2>Андозаҳо</h2>
       <span class="zone-tag"><span class="sw" style="background:var(--zone-a)"></span>Қисми калон (A)</span>
       <div class="fields">
-        <label for="la">Дарозӣ, м<input id="la" type="number" step="0.01" min="0.5" value="9"></label>
-        <label for="ha">Баландӣ, м<input id="ha" type="number" step="0.01" min="0.5" value="2.5"></label>
+        <label for="la">Дарозӣ, м<input id="la" type="number" step="0.01" min="2" value="9"></label>
+        <label for="ha">Баландӣ, м<input id="ha" type="number" step="0.01" min="1" value="2.5"></label>
       </div>
       <span class="zone-tag"><span class="sw" style="background:var(--zone-b)"></span>Қисми пастшуда (B)</span>
       <div class="fields">
-        <label for="lb">Дарозӣ, м<input id="lb" type="number" step="0.01" min="0.5" value="4"></label>
-        <label for="hb">Баландӣ, м<input id="hb" type="number" step="0.01" min="0.5" value="1.9"></label>
-        <label for="drop">Фарш пасттар, м<input id="drop" type="number" step="0.01" min="-3" value="0.8"></label>
+        <label for="lb">Дарозӣ, м<input id="lb" type="number" step="0.01" min="1" value="4"></label>
+        <label for="hb">Баландӣ, м<input id="hb" type="number" step="0.01" min="1" value="1.9"></label>
+        <label for="drop">Фарш пасттар, м<input id="drop" type="number" step="0.01" min="0" value="0.8"></label>
       </div>
       <span class="zone-tag">Умумӣ</span>
       <div class="fields">
-        <label for="w">Паҳнӣ (ҳарду қисм), м<input id="w" type="number" step="0.01" min="0.5" value="8"></label>
+        <label for="w">Паҳнӣ (ҳарду қисм), м<input id="w" type="number" step="0.01" min="2" value="8"></label>
       </div>
       <button type="button" class="reset" id="reset">Андозаҳои аввала</button>
     </div>
@@ -121,10 +135,10 @@
     <div class="panel">
       <h2>Ҳисоб</h2>
       <table>
-        <thead><tr><th>Қисм</th><th class="n" style="text-align:right">Масоҳат</th><th style="text-align:right">Ҳаҷм</th></tr></thead>
+        <thead><tr><th>Қисм</th><th class="n">Масоҳат</th><th class="n">Ҳаҷм</th></tr></thead>
         <tbody id="calc"></tbody>
       </table>
-      <p class="note" id="calc-note"></p>
+      <ul class="note" id="calc-note"></ul>
     </div>
   </div>
 </div>
@@ -136,38 +150,162 @@
   const DEF = { la: 9, lb: 4, w: 8, ha: 2.5, hb: 1.9, drop: 0.8 };
   const P = Object.assign({}, DEF);
   const ids = Object.keys(DEF);
+  const T = 0.3;      // wall thickness
+  const SLAB = 0.15;  // floor slab under the lowest floor
+  const CEIL = 0.2;   // ceiling slab
+  const STAIR_W = 1.2, TREAD = 0.28;
   const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const fmt = (v, d = 2) => Number(v).toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: d });
 
-  // ---------- 3D ----------
+  // ---------- renderer ----------
   const stage = document.getElementById("stage");
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
   stage.prepend(renderer.domElement);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 200);
   const controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.target.set(0, 0.6, 0);
+  controls.minDistance = 0.2;
+  controls.maxDistance = 60;
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a80, 0.75));
-  const sun = new THREE.DirectionalLight(0xffffff, 0.55);
-  sun.position.set(8, 14, 10);
+  scene.add(new THREE.HemisphereLight(0xfffaf0, 0x6f6a60, 0.55));
+  const sun = new THREE.DirectionalLight(0xfff4e0, 0.75);
+  sun.position.set(7, 16, 9);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.bias = -0.0005;
+  Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 50 });
   scene.add(sun);
 
-  let group = new THREE.Group();
-  scene.add(group);
+  // ---------- textures (drawn on canvas, sized in metres) ----------
+  const texBase = {};
+  function makeTex(kind) {
+    if (texBase[kind]) return texBase[kind];
+    const c = document.createElement("canvas");
+    c.width = c.height = 256;
+    const g = c.getContext("2d");
+    const speck = (n, a, b) => { for (let i = 0; i < n; i++) { g.fillStyle = Math.random() < 0.5 ? a : b; g.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); } };
+    let metres = 2;
+    if (kind === "tile") {           // 60 × 60 cm porcelain tiles, 2 × 2 per texture
+      metres = 1.2;
+      g.fillStyle = "#d8d1c4"; g.fillRect(0, 0, 256, 256);
+      speck(900, "#cfc7b9", "#e1dbcf");
+      g.fillStyle = "#a79f90";
+      [0, 128].forEach((p) => { g.fillRect(p, 0, 3, 256); g.fillRect(0, p, 256, 3); });
+    } else if (kind === "concrete") {
+      metres = 2;
+      g.fillStyle = "#a4a7a2"; g.fillRect(0, 0, 256, 256);
+      speck(2500, "#979a95", "#b3b6b0");
+    } else if (kind === "plaster") {
+      metres = 2;
+      g.fillStyle = "#eee9e0"; g.fillRect(0, 0, 256, 256);
+      speck(1200, "#e6e0d6", "#f5f1ea");
+    } else if (kind === "wood") {
+      metres = 1;
+      g.fillStyle = "#a87c52"; g.fillRect(0, 0, 256, 256);
+      g.strokeStyle = "rgba(70,40,15,0.25)";
+      for (let y = 4; y < 256; y += 9) { g.beginPath(); g.moveTo(0, y); g.bezierCurveTo(80, y + 3, 170, y - 3, 256, y + 1); g.stroke(); }
+    } else if (kind === "soil") {
+      metres = 3;
+      g.fillStyle = "#8a7a62"; g.fillRect(0, 0, 256, 256);
+      speck(3000, "#7c6c55", "#988870");
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.encoding = THREE.sRGBEncoding;
+    t.anisotropy = 4;
+    texBase[kind] = { t, metres };
+    return texBase[kind];
+  }
+  const ROUGH = { tile: 0.55, concrete: 0.95, plaster: 0.92, wood: 0.7, soil: 1 };
+  function texMat(kind, a, b) {
+    const base = makeTex(kind);
+    const t = base.t.clone();
+    t.needsUpdate = true;
+    t.repeat.set(a / base.metres, b / base.metres);
+    return new THREE.MeshStandardMaterial({ map: t, roughness: ROUGH[kind] });
+  }
+  const metal = new THREE.MeshStandardMaterial({ color: 0x2b2f2d, roughness: 0.4, metalness: 0.6 });
+  const frame = new THREE.MeshStandardMaterial({ color: 0xf4f4f2, roughness: 0.5 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x9cc6e0, transparent: true, opacity: 0.35, roughness: 0.05 });
+  const lamp = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff3d6, emissiveIntensity: 1 });
+  const shared = new Set([metal, frame, glass, lamp]);
+
+  // ---------- scene graph ----------
+  let root = new THREE.Group(), walls, ceiling, dims;
+  scene.add(root);
+  let ox = 0;
+
+  // box in plan coordinates: x along the 13 m, y up, z across the 8 m
+  // m: material, a texture kind, or {top, side} kinds
+  function box(parent, x0, x1, y0, y1, z0, z1, m, shadow = true) {
+    const sx = x1 - x0, sy = y1 - y0, sz = z1 - z0;
+    if (sx < 0.005 || sy < 0.005 || sz < 0.005) return null;
+    let mat;
+    if (m && m.isMaterial) mat = m;
+    else if (typeof m === "string") { const d = [sx, sy, sz].sort((p, q) => q - p); mat = texMat(m, d[0], d[1]); }
+    else {
+      const top = texMat(m.top, sx, sz), side = texMat(m.side, Math.max(sx, sz), sy);
+      mat = [side, side, top, side, side, side];
+    }
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
+    mesh.position.set(ox + x0 + sx / 2, y0 + sy / 2, z0 + sz / 2);
+    mesh.castShadow = shadow; mesh.receiveShadow = true;
+    parent.add(mesh);
+    return mesh;
+  }
+
+  // wall running along x, with window holes {a, b, lo, hi}
+  function wallX(x0, x1, y0, y1, z0, z1, holes) {
+    let cur = x0;
+    holes.forEach((h) => {
+      box(walls, cur, h.a, y0, y1, z0, z1, "plaster");
+      box(walls, h.a, h.b, y0, h.lo, z0, z1, "plaster");
+      box(walls, h.a, h.b, h.hi, y1, z0, z1, "plaster");
+      const f = 0.05, zm = (z0 + z1) / 2;
+      box(walls, h.a, h.b, h.lo, h.lo + f, z0, z1, frame);
+      box(walls, h.a, h.b, h.hi - f, h.hi, z0, z1, frame);
+      box(walls, h.a, h.a + f, h.lo, h.hi, z0, z1, frame);
+      box(walls, h.b - f, h.b, h.lo, h.hi, z0, z1, frame);
+      box(walls, (h.a + h.b) / 2 - f / 2, (h.a + h.b) / 2 + f / 2, h.lo, h.hi, zm - 0.03, zm + 0.03, frame);
+      box(walls, h.a + f, h.b - f, h.lo + f, h.hi - f, zm - 0.01, zm + 0.01, glass, false);
+      // inner sill
+      box(walls, h.a - 0.05, h.b + 0.05, h.lo - 0.03, h.lo, z0 - 0.06, z0 + 0.02, frame);
+      cur = h.b;
+    });
+    box(walls, cur, x1, y0, y1, z0, z1, "plaster");
+  }
+
+  // railing along x or z at floor level y
+  function railing(x0, x1, z0, z1, y, h = 0.95) {
+    const alongX = (x1 - x0) >= (z1 - z0);
+    const len = alongX ? x1 - x0 : z1 - z0;
+    const n = Math.max(1, Math.round(len / 1.0));
+    for (let i = 0; i <= n; i++) {
+      const p = (alongX ? x0 : z0) + (len * i) / n;
+      if (alongX) box(walls, p - 0.02, p + 0.02, y, y + h, z0 - 0.02, z0 + 0.02, metal);
+      else box(walls, x0 - 0.02, x0 + 0.02, y, y + h, p - 0.02, p + 0.02, metal);
+    }
+    [h, h * 0.5].forEach((hh, k) => {
+      const t = k ? 0.012 : 0.025;
+      if (alongX) box(walls, x0, x1, y + hh - t, y + hh + t, z0 - t, z0 + t, metal);
+      else box(walls, x0 - t, x0 + t, y + hh - t, y + hh + t, z0, z1, metal);
+    });
+  }
 
   function label(text, color) {
     const c = document.createElement("canvas");
     const ctx = c.getContext("2d");
     const fs = 44;
     ctx.font = `600 ${fs}px Inter, system-ui, sans-serif`;
-    const tw = ctx.measureText(text).width;
-    c.width = Math.ceil(tw + 36); c.height = fs + 24;
+    c.width = Math.ceil(ctx.measureText(text).width + 36); c.height = fs + 24;
     ctx.font = `600 ${fs}px Inter, system-ui, sans-serif`;
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillStyle = "rgba(255,255,255,0.93)";
     const r = 14;
     ctx.beginPath();
     ctx.moveTo(r, 0); ctx.arcTo(c.width, 0, c.width, c.height, r); ctx.arcTo(c.width, c.height, 0, c.height, r);
@@ -178,86 +316,208 @@
     const tex = new THREE.CanvasTexture(c);
     tex.minFilter = THREE.LinearFilter;
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
-    const h = 0.42;
-    s.scale.set(h * c.width / c.height, h, 1);
+    s.scale.set(0.42 * c.width / c.height, 0.42, 1);
     s.renderOrder = 10;
     return s;
   }
-
   function dimLine(a, b, color) {
-    const g = new THREE.BufferGeometry().setFromPoints([a, b]);
-    const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color, depthTest: false }));
+    const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), new THREE.LineBasicMaterial({ color, depthTest: false }));
     l.renderOrder = 9;
     return l;
   }
-
-  function zone(x0, x1, y0, y1, wallHex, floorHex) {
-    const L = x1 - x0, H = y1 - y0;
-    const wall = new THREE.MeshStandardMaterial({ color: wallHex, side: THREE.BackSide, roughness: 0.95 });
-    const floor = new THREE.MeshStandardMaterial({ color: floorHex, side: THREE.BackSide, roughness: 1 });
-    // box faces: +x, -x, +y, -y, +z, -z  (BackSide = see inside, near walls hide)
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(L, H, P.w), [wall, wall, wall, floor, wall, wall]);
-    mesh.position.set(x0 + L / 2, y0 + H / 2, 0);
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), new THREE.LineBasicMaterial({ color: 0x2a302c }));
-    edges.position.copy(mesh.position);
-    // floor grid, 1 m cells
-    const pts = [];
-    for (let x = Math.ceil(x0); x <= x1; x++) pts.push(new THREE.Vector3(x, y0 + 0.005, -P.w / 2), new THREE.Vector3(x, y0 + 0.005, P.w / 2));
-    for (let z = -Math.floor(P.w / 2); z <= P.w / 2; z++) pts.push(new THREE.Vector3(x0, y0 + 0.005, z), new THREE.Vector3(x1, y0 + 0.005, z));
-    const grid = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.12 }));
-    group.add(mesh, edges, grid);
+  const V = (x, y, z) => new THREE.Vector3(ox + x, y, z);
+  function dim(x0, y0, z0, x1, y1, z1, text, color) {
+    dims.add(dimLine(V(x0, y0, z0), V(x1, y1, z1), color));
+    const s = label(text, "#" + color.toString(16).padStart(6, "0"));
+    s.position.copy(V((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2));
+    dims.add(s);
   }
 
-  function person(x, y, z) {
-    const m = new THREE.MeshStandardMaterial({ color: 0x3b4540 });
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 1.52, 16), m);
-    body.position.set(x, y + 0.76, z);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.115, 16, 12), m);
-    head.position.set(x, y + 1.75 - 0.115, z);
-    group.add(body, head);
+  function person(x, y, z, color) {
+    const m = new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.2, 0.85, 16), m); body.position.y = 1.0;
+    const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.13, 0.6, 16), m); legs.position.y = 0.3;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.115, 16, 12), m); head.position.y = 1.75 - 0.115;
+    [body, legs, head].forEach((o) => { o.castShadow = true; g.add(o); });
+    g.position.set(ox + x, y, z);
+    root.add(g);
+  }
+
+  function disposeAll(obj) {
+    obj.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+      ms.forEach((m) => { if (shared.has(m)) return; if (m.map) m.map.dispose(); m.dispose(); });
+    });
+  }
+
+  // derived layout, shared by 3D and section
+  function layout() {
+    const L = P.la + P.lb, w2 = P.w / 2;
+    const yB = -P.drop, yBt = yB + P.hb;
+    const bottom = Math.min(0, yB) - SLAB;
+    // stairs between A and B, sunk into A so nobody hits the low B ceiling
+    let n = P.drop > 0.05 ? Math.max(1, Math.round(P.drop / 0.17)) : 0;
+    let pit = n ? (n - 1) * TREAD : 0;
+    if (pit > P.la * 0.5) { pit = 0; n = 0; }
+    // entrance stair from upstairs, along the back wall of A
+    const rise = P.ha + CEIL, m = Math.max(2, Math.round(rise / 0.18));
+    const s0 = 0.6, run = (m - 1) * 0.27;
+    const entrance = s0 + run + 0.3 < P.la - pit - 0.8 ? { s0, s1: s0 + run, m, r: rise / m, width: 1.0 } : null;
+    return { L, w2, yB, yBt, bottom, n, pit, rise: n ? P.drop / n : 0, entrance };
   }
 
   function build() {
-    scene.remove(group);
-    group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
-    group = new THREE.Group();
-    scene.add(group);
+    scene.remove(root);
+    disposeAll(root);
+    root = new THREE.Group(); walls = new THREE.Group(); ceiling = new THREE.Group(); dims = new THREE.Group();
+    root.add(walls, ceiling, dims);
+    scene.add(root);
 
-    const L = P.la + P.lb, ox = -L / 2, w2 = P.w / 2;
-    const yB = -P.drop, yBtop = -P.drop + P.hb;
-    zone(ox, ox + P.la, 0, P.ha, 0xece4d8, 0xc98b4f);
-    zone(ox + P.la, ox + L, yB, yBtop, 0xdfe6ec, 0x4f7fa8);
+    const G = layout();
+    const { L, w2, yB, yBt, bottom } = G;
+    ox = -L / 2;
+    const zS = STAIR_W / 2;
 
-    const ink = 0x1d2420, front = w2 + 0.6;
-    const yLow = Math.min(0, yB);
-    // lengths along the front
-    group.add(dimLine(new THREE.Vector3(ox, yLow, front), new THREE.Vector3(ox + P.la, yLow, front), ink));
-    group.add(dimLine(new THREE.Vector3(ox + P.la, yLow, front), new THREE.Vector3(ox + L, yLow, front), ink));
-    let s = label(fmt(P.la) + " м", "#8a5523"); s.position.set(ox + P.la / 2, yLow, front); group.add(s);
-    s = label(fmt(P.lb) + " м", "#2f5d86"); s.position.set(ox + P.la + P.lb / 2, yLow, front); group.add(s);
-    // total length on the back
-    group.add(dimLine(new THREE.Vector3(ox, Math.max(P.ha, yBtop) + 0.4, -w2), new THREE.Vector3(ox + L, Math.max(P.ha, yBtop) + 0.4, -w2), ink));
-    s = label("ҳамагӣ " + fmt(L) + " м", "#1d2420"); s.position.set(0, Math.max(P.ha, yBtop) + 0.4, -w2); group.add(s);
-    // width on the left
-    group.add(dimLine(new THREE.Vector3(ox - 0.6, 0, -w2), new THREE.Vector3(ox - 0.6, 0, w2), ink));
-    s = label(fmt(P.w) + " м", "#1d2420"); s.position.set(ox - 0.6, 0, 0); group.add(s);
-    // heights at the back corners
-    group.add(dimLine(new THREE.Vector3(ox + 0.25, 0, -w2 + 0.25), new THREE.Vector3(ox + 0.25, P.ha, -w2 + 0.25), 0x8a5523));
-    s = label("h " + fmt(P.ha) + " м", "#8a5523"); s.position.set(ox + 0.25, P.ha / 2, -w2 + 0.25); group.add(s);
-    group.add(dimLine(new THREE.Vector3(ox + L - 0.25, yB, -w2 + 0.25), new THREE.Vector3(ox + L - 0.25, yBtop, -w2 + 0.25), 0x2f5d86));
-    s = label("h " + fmt(P.hb) + " м", "#2f5d86"); s.position.set(ox + L - 0.25, (yB + yBtop) / 2, -w2 + 0.25); group.add(s);
-    // floor step
-    if (P.drop !== 0) {
-      group.add(dimLine(new THREE.Vector3(ox + P.la, 0, w2), new THREE.Vector3(ox + P.la, yB, w2), 0xb0352b));
-      s = label((P.drop > 0 ? "−" : "+") + fmt(Math.abs(P.drop) * 100, 0) + " см", "#b0352b");
-      s.position.set(ox + P.la + 0.05, yB / 2, w2 + 0.1); group.add(s);
+    // ----- floors -----
+    const fA = { top: "tile", side: "concrete" }, fB = { top: "concrete", side: "concrete" };
+    if (G.n) {
+      const px = P.la - G.pit;
+      box(walls, 0, px, bottom, 0, -w2, w2, fA);
+      box(walls, px, P.la, bottom, 0, -w2, -zS, fA);
+      box(walls, px, P.la, bottom, 0, zS, w2, fA);
+      for (let i = 1; i < G.n; i++) {
+        box(walls, px + (i - 1) * TREAD, px + i * TREAD, bottom, -i * G.rise, -zS, zS, { top: "wood", side: "concrete" });
+      }
+      railing(px, P.la, -zS, -zS, 0);
+      railing(px, P.la, zS, zS, 0);
+      // guard rail along the drop into B
+      railing(P.la - 0.04, P.la - 0.04, -w2, -zS, 0);
+      railing(P.la - 0.04, P.la - 0.04, zS, w2, 0);
+    } else {
+      box(walls, 0, P.la, bottom, 0, -w2, w2, fA);
     }
-    person(ox + P.la - 1.2, 0, -w2 + 1.5);
-    person(ox + P.la + P.lb / 2, yB, -w2 + 1.5);
+    box(walls, P.la, L, bottom, yB, -w2, w2, fB);
 
-    drawSection();
-    calc();
+    // ----- outer walls -----
+    const yTopA = P.ha, holes = [];
+    if (P.ha > 1.3) {
+      const lo = P.ha - 0.75, hi = P.ha - 0.2;
+      [0.3, 0.7].forEach((f) => { const c = P.la * f; holes.push({ a: c - 0.6, b: c + 0.6, lo, hi }); });
+    }
+    wallX(-T, P.la, bottom, yTopA, w2, w2 + T, holes);              // front of A, with windows
+    box(walls, -T, P.la, bottom, yTopA, -w2 - T, -w2, "plaster");   // back of A
+    box(walls, -T, 0, bottom, yTopA, -w2, w2, "plaster");           // left end
+    box(walls, P.la, L + T, bottom, yBt, w2, w2 + T, "plaster");    // front of B
+    box(walls, P.la, L + T, bottom, yBt, -w2 - T, -w2, "plaster");  // back of B
+    box(walls, L, L + T, bottom, yBt, -w2, w2, "plaster");          // right end
+    // header wall where the ceiling steps down
+    if (yBt < P.ha) box(walls, P.la, P.la + T, yBt, P.ha, -w2, w2, "plaster");
+    else if (yBt > P.ha) box(walls, P.la - T, P.la, P.ha, yBt, -w2, w2, "plaster");
+    // ground around the basement
+    const soilTop = Math.max(P.ha, yBt) + CEIL;
+    box(walls, -T - 0.6, L + T + 0.6, bottom - 0.25, bottom, -w2 - T - 0.6, w2 + T + 0.6, "soil");
+
+    // ----- entrance stair from upstairs -----
+    const E = G.entrance;
+    if (E) {
+      const z0 = -w2, z1 = -w2 + E.width;
+      for (let i = 1; i < E.m; i++) {
+        box(walls, E.s0 + (i - 1) * 0.27, E.s0 + i * 0.27, 0, i * E.r, z0, z1, { top: "wood", side: "plaster" });
+      }
+      // sloped handrail on the open side
+      const a = V(E.s0, 0.95, z1 - 0.03), b = V(E.s1, (E.m - 1) * E.r + 0.95, z1 - 0.03);
+      const len = a.distanceTo(b);
+      const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, len, 8), metal);
+      rail.position.copy(a.clone().add(b).multiplyScalar(0.5));
+      rail.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+      rail.castShadow = true;
+      walls.add(rail);
+      [0, 0.5, 1].forEach((f) => {
+        const x = E.s0 + (E.s1 - E.s0) * f, y = Math.round(f * (E.m - 1)) * E.r;
+        box(walls, x - 0.02, x + 0.02, y, y + 0.95, z1 - 0.05, z1 - 0.01, metal);
+      });
+    }
+
+    // ----- ceilings (toggle) -----
+    const cA = { top: "concrete", side: "concrete" };
+    if (E) {
+      const hx0 = E.s0 + (E.s1 - E.s0) * 0.35, hx1 = E.s1 + 0.27, hz = -w2 + E.width;
+      box(ceiling, 0, P.la, P.ha, P.ha + CEIL, hz, w2, cA);
+      box(ceiling, 0, hx0, P.ha, P.ha + CEIL, -w2, hz, cA);
+      box(ceiling, hx1, P.la, P.ha, P.ha + CEIL, -w2, hz, cA);
+    } else box(ceiling, 0, P.la, P.ha, P.ha + CEIL, -w2, w2, cA);
+    box(ceiling, yBt < P.ha ? P.la + T : P.la, L, yBt, yBt + CEIL, -w2, w2, cA);
+
+    // ----- lights: fixtures on the ceiling, real light inside -----
+    const fixture = (x, y, z) => {
+      const d = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.04, 24), lamp);
+      d.position.set(ox + x, y - 0.02, z);
+      ceiling.add(d);
+    };
+    const rowsA = [P.la * 0.25, P.la * 0.62], colsA = [-w2 / 2, w2 / 2];
+    rowsA.forEach((x) => colsA.forEach((z) => fixture(x, P.ha, z)));
+    [-w2 / 2, w2 / 2].forEach((z) => fixture(P.la + P.lb / 2, yBt, z));
+    [[P.la * 0.3, P.ha - 0.3, 0], [P.la * 0.75, P.ha - 0.3, 0], [P.la + P.lb / 2, yBt - 0.25, 0]].forEach(([x, y, z]) => {
+      const pl = new THREE.PointLight(0xffe9c4, 0.45, 9, 1.6);
+      pl.position.set(ox + x, y, z);
+      root.add(pl);
+    });
+
+    // ----- people for scale -----
+    person(P.la * 0.55, 0, -w2 + 2.2, 0x3b4540);
+    person(P.la + P.lb * 0.6, yB, -w2 + 2.2, 0x2f5d86);
+
+    // ----- dimensions -----
+    const front = w2 + T + 0.7, yl = 0.05;
+    dim(0, yl, front, P.la, yl, front, fmt(P.la) + " м", 0x8a5523);
+    dim(P.la, yl, front, L, yl, front, fmt(P.lb) + " м", 0x2f5d86);
+    const yt = soilTop + 0.5;
+    dim(0, yt, -w2 - T, L, yt, -w2 - T, "ҳамагӣ " + fmt(L) + " м", 0x1d2420);
+    dim(-T - 0.7, yl, -w2, -T - 0.7, yl, w2, fmt(P.w) + " м", 0x1d2420);
+    dim(0.3, 0, -w2 + 0.3 + (E ? E.width : 0), 0.3, P.ha, -w2 + 0.3 + (E ? E.width : 0), "h " + fmt(P.ha) + " м", 0x8a5523);
+    dim(L - 0.3, yB, -w2 + 0.3, L - 0.3, yBt, -w2 + 0.3, "h " + fmt(P.hb) + " м", 0x2f5d86);
+    if (P.drop) dim(P.la + 0.15, 0, w2 - 0.3, P.la + 0.15, yB, w2 - 0.3, "−" + fmt(P.drop * 100, 0) + " см", 0xb0352b);
+    if (yBt < P.ha) dim(P.la + T + 0.1, yBt, w2 - 0.6, P.la + T + 0.1, P.ha, w2 - 0.6, "−" + fmt((P.ha - yBt) * 100, 0) + " см", 0xb0352b);
+
+    ceiling.visible = state.ceiling;
+    dims.visible = state.dims;
+    drawSection(G);
+    calc(G);
   }
+
+  // ---------- view state ----------
+  const state = { ceiling: false, dims: true, view: "3d" };
+  function setPressed() {
+    ["3d", "in", "top", "side"].forEach((k) => document.getElementById("v-" + k).setAttribute("aria-pressed", String(state.view === k)));
+    document.getElementById("t-ceil").setAttribute("aria-pressed", String(state.ceiling));
+    document.getElementById("t-dim").setAttribute("aria-pressed", String(state.dims));
+  }
+  function view(kind) {
+    state.view = kind;
+    const L = P.la + P.lb, d = Math.max(L, P.w);
+    if (kind === "in") {
+      state.ceiling = true; state.dims = false;
+      camera.position.set(-L / 2 + 1.0, 1.6, P.w / 2 - 1.0);
+      controls.target.set(-L / 2 + P.la + 0.8, 0.4, -0.6);
+    } else {
+      state.ceiling = false;
+      controls.target.set(0, 0.4, 0);
+      if (kind === "top") camera.position.set(0, d * 1.9, 0.01);
+      else if (kind === "side") camera.position.set(0, 0.8, d * 1.6);
+      else camera.position.set(d * 0.7, d * 0.85, d * 1.05);
+    }
+    ceiling.visible = state.ceiling; dims.visible = state.dims;
+    setPressed();
+    controls.update();
+  }
+  document.getElementById("v-3d").onclick = () => view("3d");
+  document.getElementById("v-in").onclick = () => view("in");
+  document.getElementById("v-top").onclick = () => view("top");
+  document.getElementById("v-side").onclick = () => view("side");
+  document.getElementById("t-ceil").onclick = () => { state.ceiling = !state.ceiling; ceiling.visible = state.ceiling; setPressed(); };
+  document.getElementById("t-dim").onclick = () => { state.dims = !state.dims; dims.visible = state.dims; setPressed(); };
 
   function resize() {
     const r = stage.getBoundingClientRect();
@@ -266,71 +526,91 @@
     camera.updateProjectionMatrix();
   }
   new ResizeObserver(resize).observe(stage);
-
-  function setBg() { renderer.setClearColor(new THREE.Color(css("--stage") || "#e6e9e3")); }
+  function setBg() { renderer.setClearColor(new THREE.Color(css("--stage") || "#dfe4de")); }
   setBg();
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", setBg);
   new MutationObserver(setBg).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
-  function view(kind) {
-    const L = P.la + P.lb, d = Math.max(L, P.w);
-    controls.target.set(0, 0.6, 0);
-    if (kind === "top") camera.position.set(0, d * 1.9, 0.01);
-    else if (kind === "side") camera.position.set(0, 0.6, d * 1.6);
-    else camera.position.set(d * 0.75, d * 0.85, d * 1.05);
-    controls.update();
-  }
-  document.getElementById("v-3d").onclick = () => view("3d");
-  document.getElementById("v-top").onclick = () => view("top");
-  document.getElementById("v-side").onclick = () => view("side");
-
   (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
 
   // ---------- section drawing ----------
-  function drawSection() {
-    const L = P.la + P.lb, k = 56, padL = 70, padR = 30, padT = 40, padB = 50;
-    const top = Math.max(P.ha, P.hb - P.drop), bot = Math.min(0, -P.drop);
-    const W = padL + L * k + padR, H = padT + (top - bot) * k + padB;
-    const X = (x) => padL + x * k, Y = (y) => padT + (top - y) * k;
-    const yB = -P.drop, yBt = -P.drop + P.hb;
+  function drawSection(G) {
+    const { L, yB, yBt, bottom } = G;
+    const k = 56, padL = 70, padR = 30, padT = 30, padB = 50;
+    const top = Math.max(P.ha, yBt) + CEIL, bot = bottom;
+    const W = padL + (L + 2 * T) * k + padR, H = padT + (top - bot) * k + padB;
+    const X = (x) => padL + (x + T) * k, Y = (y) => padT + (top - y) * k;
     const t = (x, y, s, fill, anchor = "middle", size = 13) =>
       `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${size}" font-family="Inter, system-ui, sans-serif" fill="${fill}">${s}</text>`;
-    // person silhouette
+    const rect = (x0, y0, x1, y1, fill, extra = "") => `<rect x="${X(x0)}" y="${Y(y1)}" width="${(x1 - x0) * k}" height="${(y1 - y0) * k}" fill="${fill}" ${extra}/>`;
     const man = (x, y) => `<g fill="var(--muted)"><rect x="${X(x) - 6}" y="${Y(y + 1.52)}" width="12" height="${1.52 * k}" rx="5"/><circle cx="${X(x)}" cy="${Y(y + 1.635)}" r="${0.115 * k}"/></g>`;
-    let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Буриши подвал">`;
-    svg += `<rect x="${X(0)}" y="${Y(P.ha)}" width="${P.la * k}" height="${P.ha * k}" fill="var(--zone-a)" fill-opacity="0.22" stroke="var(--zone-a)" stroke-width="2"/>`;
-    svg += `<rect x="${X(P.la)}" y="${Y(yBt)}" width="${P.lb * k}" height="${P.hb * k}" fill="var(--zone-b)" fill-opacity="0.22" stroke="var(--zone-b)" stroke-width="2"/>`;
-    svg += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(P.la)}" y2="${Y(0)}" stroke="var(--fg)" stroke-width="3"/>`;
-    svg += `<line x1="${X(P.la)}" y1="${Y(yB)}" x2="${X(L)}" y2="${Y(yB)}" stroke="var(--fg)" stroke-width="3"/>`;
-    svg += man(P.la - 1, 0) + man(P.la + P.lb / 2, yB);
-    // height labels
-    svg += t(X(P.la / 2), Y(P.ha / 2) + 5, "A · h " + fmt(P.ha) + " м", "var(--fg)", "middle", 15);
-    svg += t(X(P.la + P.lb / 2) + 34, Y((yB + yBt) / 2) + 5, "B · h " + fmt(P.hb) + " м", "var(--fg)", "start", 15);
-    // level marks on the left
-    const lv = (y, s) => `<line x1="${padL - 8}" y1="${Y(y)}" x2="${X(L)}" y2="${Y(y)}" stroke="var(--line)" stroke-dasharray="4 4"/>` + t(padL - 12, Y(y) + 4, s, "var(--muted)", "end", 12);
-    svg = svg.replace("<rect", lv(0, "±0,00") + lv(P.ha, "+" + fmt(P.ha)) + (P.drop ? lv(yB, (yB < 0 ? "" : "+") + fmt(yB)) : "") + (Math.abs(yBt - P.ha) > 0.01 && Math.abs(yBt) > 0.01 ? lv(yBt, (yBt > 0 ? "+" : "") + fmt(yBt)) : "") + "<rect");
+    const lv = (y, s) => `<line x1="${padL - 8}" y1="${Y(y)}" x2="${X(L + T)}" y2="${Y(y)}" stroke="var(--line)" stroke-dasharray="4 4"/>` + t(padL - 12, Y(y) + 4, s, "var(--muted)", "end", 12);
+    let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Буриши подвал">`;
+    s += lv(0, "±0,00") + lv(P.ha, "+" + fmt(P.ha));
+    if (P.drop) s += lv(yB, fmt(yB));
+    if (Math.abs(yBt - P.ha) > 0.01 && Math.abs(yBt) > 0.01) s += lv(yBt, (yBt > 0 ? "+" : "") + fmt(yBt));
+    // rooms
+    s += rect(0, 0, P.la, P.ha, "var(--zone-a)", 'fill-opacity="0.18"');
+    s += rect(P.la, yB, L, yBt, "var(--zone-b)", 'fill-opacity="0.18"');
+    // solid parts: slabs, walls, ceilings
+    const solid = "var(--muted)";
+    s += rect(-T, bot, 0, P.ha + CEIL, solid, 'fill-opacity="0.55"');
+    s += rect(L, bot, L + T, yBt + CEIL, solid, 'fill-opacity="0.55"');
+    s += rect(0, P.ha, P.la, P.ha + CEIL, solid, 'fill-opacity="0.55"');
+    s += rect(P.la, yBt, L, yBt + CEIL, solid, 'fill-opacity="0.55"');
+    if (yBt < P.ha) s += rect(P.la, yBt + CEIL, P.la + T, P.ha + CEIL, solid, 'fill-opacity="0.55"');
+    // floor A with stair pit
+    const px = P.la - G.pit;
+    s += rect(0, bot, G.n ? px : P.la, 0, solid, 'fill-opacity="0.55"');
+    let stairs = "";
+    if (G.n) {
+      let d = `M${X(px)} ${Y(0)}`;
+      for (let i = 1; i < G.n; i++) d += ` V${Y(-i * G.rise)} H${X(px + i * TREAD)}`;
+      d += ` V${Y(yB)}`;
+      stairs = `<path d="${d} V${Y(bot)} H${X(px)} Z" fill="${solid}" fill-opacity="0.55"/><path d="${d}" fill="none" stroke="var(--fg)" stroke-width="3"/>`;
+      s += `<line x1="${X(px)}" y1="${Y(0.95)}" x2="${X(P.la)}" y2="${Y(0.95)}" stroke="var(--fg)" stroke-width="1.5"/>`;
+    }
+    s += stairs;
+    s += rect(P.la, bot, L, yB, solid, 'fill-opacity="0.55"');
+    s += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(G.n ? px : P.la)}" y2="${Y(0)}" stroke="var(--fg)" stroke-width="3"/>`;
+    s += `<line x1="${X(G.n ? P.la : P.la)}" y1="${Y(G.n ? yB : 0)}" x2="${X(P.la)}" y2="${Y(yB)}" stroke="var(--fg)" stroke-width="3"/>`;
+    s += `<line x1="${X(P.la)}" y1="${Y(yB)}" x2="${X(L)}" y2="${Y(yB)}" stroke="var(--fg)" stroke-width="3"/>`;
+    // entrance stair (along the back wall, drawn dashed)
+    if (G.entrance) {
+      const E = G.entrance;
+      let d = `M${X(E.s0)} ${Y(0)}`;
+      for (let i = 1; i < E.m; i++) d += ` V${Y(i * E.r)} H${X(E.s0 + i * 0.27)}`;
+      s += `<path d="${d}" fill="none" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
+      s += t(X((E.s0 + E.s1) / 2), Y(E.m * E.r * 0.5) - 10, "зинапояи даромад", "var(--muted)", "middle", 12);
+    }
+    s += man(P.la * 0.55, 0) + man(P.la + P.lb * 0.6, yB);
+    s += t(X(P.la * 0.75), Y(P.ha / 2) + 5, "A · h " + fmt(P.ha) + " м", "var(--fg)", "middle", 15);
+    s += t(X(P.la + P.lb * 0.6) + 20, Y((yB + yBt) / 2) + 5, "B · h " + fmt(P.hb) + " м", "var(--fg)", "start", 15);
+    if (P.drop) s += t(X(P.la) + 6, Y(yB) - 8, "−" + fmt(P.drop * 100, 0) + " см", "#c0392b", "start", 12);
     // lengths
     const dy = H - 18;
-    svg += `<line x1="${X(0)}" y1="${dy - 10}" x2="${X(L)}" y2="${dy - 10}" stroke="var(--muted)"/>`;
-    [0, P.la, L].forEach((x) => (svg += `<line x1="${X(x)}" y1="${dy - 16}" x2="${X(x)}" y2="${dy - 4}" stroke="var(--muted)"/>`));
-    svg += t(X(P.la / 2), dy + 6, fmt(P.la) + " м", "var(--fg)") + t(X(P.la + P.lb / 2), dy + 6, fmt(P.lb) + " м", "var(--fg)");
-    // step
-    if (P.drop) svg += t(X(P.la) + 6, Y(yB / 2) + 4, (P.drop > 0 ? "−" : "+") + fmt(Math.abs(P.drop) * 100, 0) + " см", "#c0392b", "start", 12);
-    svg += "</svg>";
-    document.getElementById("section").innerHTML = svg;
+    s += `<line x1="${X(0)}" y1="${dy - 10}" x2="${X(L)}" y2="${dy - 10}" stroke="var(--muted)"/>`;
+    [0, P.la, L].forEach((x) => (s += `<line x1="${X(x)}" y1="${dy - 16}" x2="${X(x)}" y2="${dy - 4}" stroke="var(--muted)"/>`));
+    s += t(X(P.la / 2), dy + 6, fmt(P.la) + " м", "var(--fg)") + t(X(P.la + P.lb / 2), dy + 6, fmt(P.lb) + " м", "var(--fg)");
+    s += "</svg>";
+    document.getElementById("section").innerHTML = s;
   }
 
   // ---------- numbers ----------
-  function calc() {
+  function calc(G) {
     const aA = P.la * P.w, aB = P.lb * P.w, vA = aA * P.ha, vB = aB * P.hb;
     document.getElementById("calc").innerHTML =
       `<tr><td>A · ${fmt(P.la)} × ${fmt(P.w)}</td><td class="n">${fmt(aA)} м²</td><td class="n">${fmt(vA)} м³</td></tr>` +
       `<tr><td>B · ${fmt(P.lb)} × ${fmt(P.w)}</td><td class="n">${fmt(aB)} м²</td><td class="n">${fmt(vB)} м³</td></tr>` +
       `<tr><td><b>Ҳамагӣ</b></td><td class="n"><b>${fmt(aA + aB)} м²</b></td><td class="n"><b>${fmt(vA + vB)} м³</b></td></tr>`;
-    const ceilB = P.hb - P.drop;
-    document.getElementById("calc-note").textContent =
-      `Шифти қисми B дар сатҳи ${fmt(ceilB)} м аз фарши A аст, яъне ${fmt(P.ha - ceilB)} м пасттар аз шифти A. ` +
-      `Деворҳо (периметр): ${fmt(2 * (P.la + P.lb) + 2 * P.w)} м.`;
+    const items = [
+      `Шифти B ${fmt((P.ha - G.yBt) * 100, 0)} см пасттар аз шифти A аст.`,
+      `Деворҳо (периметр, дарунӣ): ${fmt(2 * (P.la + P.lb) + 2 * P.w)} м. Ғафсии девор дар модел: ${fmt(T * 100, 0)} см.`,
+    ];
+    if (G.n) items.push(`Зинапояи байни A ва B: ${G.n} зина × ${fmt(G.rise * 100, 0)} см, паҳнӣ ${fmt(STAIR_W)} м. Дар қисми A кофта шудааст, то сар ба шифти паст нахӯрад.`);
+    if (G.entrance) items.push(`Зинапояи даромад (намуна): ${G.entrance.m} зина, дар девори қафои A.`);
+    items.push("Тирезаҳо ва чароғҳо намуна мебошанд. Ҷояшонро гӯед, дуруст мекунам.");
+    document.getElementById("calc-note").innerHTML = items.map((x) => `<li>${x}</li>`).join("");
   }
 
   // ---------- inputs ----------
@@ -339,7 +619,7 @@
     el.addEventListener("input", () => {
       const v = parseFloat(String(el.value).replace(",", "."));
       if (!isFinite(v)) return;
-      if (id !== "drop" && v <= 0) return;
+      if (id === "drop" ? v < 0 : v <= 0.5) return;
       P[id] = v; build();
     });
   });
