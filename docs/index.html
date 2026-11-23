@@ -181,6 +181,7 @@
   const SLAB = 0.15;  // floor slab under the lowest floor
   const CEIL = 0.2;   // ceiling slab
   const STAIR_W = 1.2, TREAD = 0.28;
+  const DOOR_X = 4, DOOR_W = 0.9, DOOR_H = 2.05;
   const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const fmt = (v, d = 2) => Number(v).toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: d });
 
@@ -295,6 +296,16 @@
       box(walls, h.a, h.b, y0, h.lo, z0, z1, "plaster");
       box(walls, h.a, h.b, h.hi, y1, z0, z1, "plaster");
       const f = 0.05, zm = (z0 + z1) / 2;
+      if (h.door) {
+        // frame on three sides, closed wooden leaf, handle on the inside
+        box(walls, h.a, h.b, h.hi - f, h.hi, z0, z1, frame);
+        box(walls, h.a, h.a + f, h.lo, h.hi, z0, z1, frame);
+        box(walls, h.b - f, h.b, h.lo, h.hi, z0, z1, frame);
+        box(walls, h.a + f, h.b - f, h.lo, h.hi - f, zm - 0.025, zm + 0.025, "wood");
+        box(walls, h.b - f - 0.14, h.b - f - 0.06, 1.0, 1.03, zm - 0.1, zm - 0.025, metal);
+        cur = h.b;
+        return;
+      }
       box(walls, h.a, h.b, h.lo, h.lo + f, z0, z1, frame);
       box(walls, h.a, h.b, h.hi - f, h.hi, z0, z1, frame);
       box(walls, h.a, h.a + f, h.lo, h.hi, z0, z1, frame);
@@ -391,8 +402,11 @@
     // entrance stair from upstairs, along the back wall of A
     const rise = P.ha + CEIL, m = Math.max(2, Math.round(rise / 0.18));
     const s0 = 0.6, run = (m - 1) * 0.27;
-    const entrance = s0 + run + 0.3 < P.la - pit - 0.8 ? { s0, s1: s0 + run, m, r: rise / m, width: 1.0 } : null;
-    return { L, w2, yB, yBt, bottom, n, pit, rise: n ? P.drop / n : 0, entrance };
+    // the entrance is the door in the front wall, so no stair from upstairs
+    const entrance = null;
+    // entrance door: front wall of A, starting 4 m from the left end
+    const door = DOOR_X + DOOR_W < P.la - 0.1 ? { a: DOOR_X, b: DOOR_X + DOOR_W, h: Math.min(DOOR_H, P.ha - 0.1) } : null;
+    return { L, w2, yB, yBt, bottom, n, pit, rise: n ? P.drop / n : 0, entrance, door };
   }
 
   function build() {
@@ -424,10 +438,16 @@
 
     // ----- outer walls -----
     const yTopA = P.ha, holes = [];
+    const door = G.door;
+    if (door) holes.push({ a: door.a, b: door.b, lo: 0, hi: door.h, door: true });
     if (P.ha > 1.3) {
       const lo = P.ha - 0.75, hi = P.ha - 0.2;
-      [0.3, 0.7].forEach((f) => { const c = P.la * f; holes.push({ a: c - 0.6, b: c + 0.6, lo, hi }); });
+      [0.3, 0.7].forEach((f) => {
+        const c = P.la * f, a = c - 0.6, b = c + 0.6;
+        if (a > 0.2 && b < P.la - 0.2 && !(door && a < door.b + 0.3 && b > door.a - 0.3)) holes.push({ a, b, lo, hi });
+      });
     }
+    holes.sort((p, q) => p.a - q.a);
     wallX(-T, P.la, bottom, yTopA, w2, w2 + T, holes);              // front of A, with windows
     box(walls, -T, P.la, bottom, yTopA, -w2 - T, -w2, "plaster");   // back of A
     box(walls, -T, 0, bottom, yTopA, -w2, w2, "plaster");           // left end
@@ -494,6 +514,7 @@
     // ----- dimensions -----
     const front = w2 + T + 0.7, yl = 0.05;
     dim(0, yl, front, P.la, yl, front, fmt(P.la) + " м", 0x8a5523);
+    if (G.door) dim(0, yl, w2 + T + 0.3, G.door.a, yl, w2 + T + 0.3, "дар: " + fmt(G.door.a) + " м", 0x6b4a2b);
     dim(P.la, yl, front, L, yl, front, fmt(P.lb) + " м", 0x2f5d86);
     const yt = soilTop + 0.5;
     dim(0, yt, -w2 - T, L, yt, -w2 - T, "ҳамагӣ " + fmt(L) + " м", 0x1d2420);
@@ -629,7 +650,7 @@
       `Деворҳо (периметр, дарунӣ): ${fmt(2 * (P.la + P.lb) + 2 * P.w)} м. Ғафсии девор дар модел: ${fmt(T * 100, 0)} см.`,
     ];
     if (G.n) items.push(`Зинапояи байни A ва B: ${G.n} зина × ${fmt(G.rise * 100, 0)} см, паҳнӣ ${fmt(STAIR_W)} м. Дар қисми A кофта шудааст, то сар ба шифти паст нахӯрад.`);
-    if (G.entrance) items.push(`Зинапояи даромад (намуна): ${G.entrance.m} зина, дар девори қафои A.`);
+    if (G.door) items.push(`Дари даромад: дар девори пеши A, ${fmt(DOOR_X)} м аз кунҷи чап, паҳнӣ ${fmt(DOOR_W * 100, 0)} см, баландӣ ${fmt(G.door.h * 100, 0)} см.`);
     items.push("Тирезаҳо ва чароғҳо намуна мебошанд. Ҷояшонро гӯед, дуруст мекунам.");
     document.getElementById("calc-note").innerHTML = items.map((x) => `<li>${x}</li>`).join("");
   }
