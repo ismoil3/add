@@ -86,7 +86,7 @@
 <div class="wrap">
   <header>
     <h1>Подвали 13 × 8 м</h1>
-    <p class="lead">Қисми калон 9 × 8 м бо баландии 2,50 м. Қисми хурд 4 × 8 м: фаршаш 80 см пасттар, баландиаш 1,90 м, шифташ 1,40 м пасттар аз шифти калон. Моделро гардонед, «Аз дарун»-ро пахш кунед, андозаҳоро дар поён иваз кунед.</p>
+    <p class="lead">Қисми калон 9 × 8 м бо баландии 2,50 м. Қисми хурд 4 × 8 м: фаршаш 50 см пасттар, баландиаш 1,90 м, шифташ 1,10 м пасттар аз шифти калон. Моделро гардонед, «Аз дарун»-ро пахш кунед, андозаҳоро дар поён иваз кунед.</p>
   </header>
 
   <div class="stage" id="stage">
@@ -123,7 +123,7 @@
       <div class="fields">
         <label for="lb">Дарозӣ, м<input id="lb" type="number" step="0.01" min="1" value="4"></label>
         <label for="hb">Баландӣ, м<input id="hb" type="number" step="0.01" min="1" value="1.9"></label>
-        <label for="drop">Фарш пасттар, м<input id="drop" type="number" step="0.01" min="0" value="0.8"></label>
+        <label for="drop">Фарш пасттар, м<input id="drop" type="number" step="0.01" min="0" value="0.5"></label>
       </div>
       <span class="zone-tag">Умумӣ</span>
       <div class="fields">
@@ -147,7 +147,7 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 (function () {
-  const DEF = { la: 9, lb: 4, w: 8, ha: 2.5, hb: 1.9, drop: 0.8 };
+  const DEF = { la: 9, lb: 4, w: 8, ha: 2.5, hb: 1.9, drop: 0.5 };
   const P = Object.assign({}, DEF);
   const ids = Object.keys(DEF);
   const T = 0.3;      // wall thickness
