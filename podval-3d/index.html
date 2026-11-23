@@ -650,8 +650,9 @@
   });
   renderer.domElement.addEventListener("pointermove", (e) => {
     if (!drag || e.pointerId !== drag.id) return;
-    fp.tYaw -= (e.clientX - drag.x) * 0.005;
-    fp.tPitch = Math.max(-1.1, Math.min(1.1, fp.tPitch + (e.clientY - drag.y) * 0.004));
+    // drag left = turn left, drag up = look up
+    fp.tYaw += (e.clientX - drag.x) * 0.005;
+    fp.tPitch = Math.max(-1.1, Math.min(1.1, fp.tPitch - (e.clientY - drag.y) * 0.004));
     drag.x = e.clientX; drag.y = e.clientY;
   });
   ["pointerup", "pointercancel"].forEach((t) => renderer.domElement.addEventListener(t, () => (drag = null)));
