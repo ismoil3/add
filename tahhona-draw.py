@@ -27,7 +27,7 @@ START = 0.48
 LAND = SL - START - NT * TREAD           # 1.20
 COLS = [(XD, 4.0), (XD + 4.5, 4.0)]
 DOOR_DIV = (4.4, 5.3)
-WIN = [(6.3, 7.2), (9.3, 10.1)]
+WIN = [(10.3, 11.2), (9.3, 10.1)]      # T-1 next to T-2
 DOOR_BACK = (7.6, 8.4)
 SHEETS = 4
 
@@ -141,6 +141,7 @@ def stair_plan(v, numbers=False):
         v.text(xe, ym1 - 0.32, "8", size=7)
         v.text(x0 - 0.24, ym2 + 0.2, "16", size=7)
     v.text(x0 + 1.0, ym1 + (-0.3 if not numbers else 0.2), "боло ↑", size=9 if numbers else 7, bold=True)
+    v.text(x0 + 1.0, ym2 + (0.15 if not numbers else -0.33), "боло ↑", size=9 if numbers else 7, bold=True)
 
 
 # =============================== 1: PLAN ===============================
@@ -184,7 +185,7 @@ v.dimh(0, L, -1.5)
 v.dimh(0, XD, -1.0); v.dimh(XD, L, -1.0)
 for a, b in ((0, TE), (TE, XD - TI / 2), (XD - TI / 2, XD + TI / 2), (XD + TI / 2, L - TE), (L - TE, L)):
     v.dimh(a, b, -0.5)
-pts = [XD + TI / 2, WIN[0][0], WIN[0][1], DOOR_BACK[0], DOOR_BACK[1], WIN[1][0], WIN[1][1], L - TE]
+pts = [XD + TI / 2, DOOR_BACK[0], DOOR_BACK[1], WIN[1][0], WIN[1][1], WIN[0][0], WIN[0][1], L - TE]
 for a, b in zip(pts, pts[1:]): v.dimh(a, b, D + 0.5, size=7)
 v.dimh(XD, XD + 4.5, D + 1.0); v.dimh(XD + 4.5, L, D + 1.0)
 v.dimv(0, D, -1.6)
