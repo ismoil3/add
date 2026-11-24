@@ -1,4 +1,10 @@
-"""Basement working drawings for builders (from the 3D model). Dimensions in cm."""
+"""Basement working drawings for builders, taken from the 3D model (khona / podval-3d).
+
+Model coordinates (metres): x along the street, 0 = axis 2, 9 = axis 4, 13 = axis 5;
+z across: -4 = axis A (street), 0 = axis Б, +4 = axis В (porch / back yard).
+Plan drawing uses y = -z so the street is at the top, as on the 1st-floor plan.
+All dimensions are written in centimetres.
+"""
 import math
 import sys
 from reportlab.pdfgen import canvas
@@ -14,26 +20,37 @@ RED = (0.70, 0.18, 0.12)
 c = canvas.Canvas(sys.argv[1], pagesize=(W, H))
 c.setTitle("Таҳхона — нақша барои устоҳо")
 
-# ---------------- geometry (metres, outer corner = 0,0) ----------------
-L, D = 13.0, 8.0
-TE, TI = 0.4, 0.2
-XD = 4.0
-SL, SW = 3.5, 2.0
-SX0, SY0 = XD + TI / 2, D - TE - SW      # corner of room 2 at back wall, next to divider
-FW, GAP = 0.9, 0.2
-NR, RISE, TREAD = 16, 275 / 16, 0.26      # 16 x 17,2 cm
-NT = 7
-START = 0.48
-LAND = SL - START - NT * TREAD           # 1.20
-COLS = [(XD, 4.0), (XD + 4.5, 4.0)]
-DOOR_DIV = (4.4, 5.3)
-WIN = [(10.3, 11.2), (9.3, 10.1)]      # T-1 next to T-2
-DOOR_BACK = (7.6, 8.4)
+# ---------------- model values ----------------
+LA, LB, WD = 9.0, 4.0, 8.0          # part A (9 m), part B (4 m), width 8 m — inside sizes
+L = LA + LB
+T = 0.3                             # walls 30 cm, outside the inside sizes
+HA, HB, DROP = 2.5, 2.0, 0.5        # clear heights, B floor 50 cm lower
+SLAB, CEIL, FIN = 0.15, 0.2, 0.05   # floor slab, ceiling slab, floor-1 finish
+YBT = -DROP + HB                    # B ceiling (1,5 above A floor)
+F1 = HA + CEIL + FIN                # floor 1 = 2,75 above A floor
+BEAM = (LA, LA + T)                 # header wall where the ceiling steps down
+COLS = [(4.5, 0.0), (9.0, 0.0)]
+COL = 0.4
+# A/B step stair, sunk into A beside the column
+NS = 3; SR = DROP / NS; ST = 0.28
+SSZ0, SSZ1 = 0.3, 1.5
+SSX0 = LA - (NS - 1) * ST            # 8,44
+# main stair shaft (same place on every level)
+SH = dict(x0=5.1, x1=8.6, z0=1.6, z1=3.6)
+TR = 0.26; NR = 16; RD = F1 / NR     # 16 × 17,2 cm
+SX0 = 5.25                           # floor-1 end of the flights
+DX1 = SX0 + 8 * TR                   # 7,33: landing edge
+MID0, MID1 = SH["z0"] + 0.9, SH["z0"] + 1.1   # core wall 2,5 … 2,7
+LAND = RD * 8                        # landing height 137,5
+# openings in the В wall (z = +4)
+DOOR = (4.0, 4.9); DOOR_H = 2.05
+WINS = [("Т-1", 0.7, 1.9), ("Т-2", 2.1, 3.3)]
 SHEETS = 4
 
 
 def cm(v):
-    return f"{round(v * 100):d}"
+    v = round(v * 100, 1)
+    return f"{v:.0f}" if abs(v - round(v)) < 0.05 else f"{v:.1f}".replace(".", ",")
 
 
 def frame(title, sheet):
@@ -57,12 +74,12 @@ class View:
     def p(s, x, y):
         return s.ox + (x - s.off[0]) * s.k, s.oy + (y - s.off[1]) * s.k
 
-    def rect(s, x, y, w, h, fill=None, stroke=True, lw=0.5):
-        X, Y = s.p(x, y)
+    def rect(s, x0, y0, x1, y1, fill=None, stroke=False, lw=0.5):
+        X0, Y0 = s.p(min(x0, x1), min(y0, y1)); X1, Y1 = s.p(max(x0, x1), max(y0, y1))
         if fill is not None:
             c.setFillGray(fill) if isinstance(fill, float) else c.setFillColorRGB(*fill)
         c.setLineWidth(lw)
-        c.rect(X, Y, w * s.k, h * s.k, stroke=1 if stroke else 0, fill=1 if fill is not None else 0)
+        c.rect(X0, Y0, X1 - X0, Y1 - Y0, stroke=1 if stroke else 0, fill=1 if fill is not None else 0)
         c.setFillGray(0)
 
     def line(s, x1, y1, x2, y2, lw=0.4, gray=0, dash=None):
@@ -70,6 +87,16 @@ class View:
         c.setDash(list(dash)) if dash else c.setDash()
         c.line(*s.p(x1, y1), *s.p(x2, y2))
         c.setDash(); c.setStrokeGray(0)
+
+    def poly(s, pts, fill=None, lw=0.6, dash=None, close=True):
+        path = c.beginPath(); path.moveTo(*s.p(*pts[0]))
+        for q in pts[1:]: path.lineTo(*s.p(*q))
+        if close: path.close()
+        c.setLineWidth(lw)
+        c.setDash(list(dash)) if dash else c.setDash()
+        if fill is not None: c.setFillGray(fill)
+        c.drawPath(path, stroke=1, fill=1 if fill is not None else 0)
+        c.setDash(); c.setFillGray(0)
 
     def text(s, x, y, t, size=8, bold=False, center=True, color=None):
         X, Y = s.p(x, y)
@@ -85,7 +112,7 @@ class View:
             c.line(X - 1.2 * mm, Y - 1.2 * mm, X + 1.2 * mm, Y + 1.2 * mm)
             c.line(X, Y - 2 * mm, X, Y + 2 * mm)
         c.setFont("F", size)
-        c.drawCentredString((X1 + X2) / 2, Y + 1.2 * mm, t or cm(x2 - x1))
+        c.drawCentredString((X1 + X2) / 2, Y + 1.2 * mm, t or cm(abs(x2 - x1)))
 
     def dimv(s, y1, y2, x, t=None, size=7.5):
         X, Y1 = s.p(x, y1); _, Y2 = s.p(x, y2)
@@ -94,16 +121,22 @@ class View:
             c.line(X - 1.2 * mm, Y - 1.2 * mm, X + 1.2 * mm, Y + 1.2 * mm)
             c.line(X - 2 * mm, Y, X + 2 * mm, Y)
         c.saveState(); c.translate(X - 1.2 * mm, (Y1 + Y2) / 2); c.rotate(90)
-        c.setFont("F", size); c.drawCentredString(0, 0, t or cm(y2 - y1))
+        c.setFont("F", size); c.drawCentredString(0, 0, t or cm(abs(y2 - y1)))
         c.restoreState()
 
-    def arrow(s, pts, lw=0.7):
+    def chainh(s, xs, y, size=7.5):
+        for a, b in zip(xs, xs[1:]): s.dimh(a, b, y, size=size)
+
+    def chainv(s, ys, x, size=7.5):
+        for a, b in zip(ys, ys[1:]): s.dimv(a, b, x, size=size)
+
+    def arrow(s, pts, lw=0.7, dot=True):
         c.setLineWidth(lw)
         P = [s.p(*q) for q in pts]
         path = c.beginPath(); path.moveTo(*P[0])
         for q in P[1:]: path.lineTo(*q)
         c.drawPath(path, stroke=1, fill=0)
-        c.circle(*P[0], 0.8 * mm, stroke=0, fill=1)
+        if dot: c.circle(*P[0], 0.8 * mm, stroke=0, fill=1)
         (x1, y1), (x2, y2) = P[-2], P[-1]
         a = math.atan2(y2 - y1, x2 - x1)
         hl, hw = 2.6 * mm, 1.1 * mm
@@ -121,157 +154,190 @@ def axis_bubble(X, Y, t):
     c.setFillGray(0); c.setStrokeGray(0)
 
 
-def stair_plan(v, numbers=False):
-    v.rect(SX0, SY0, SL, SW, fill=0.93, stroke=False)
-    yA, yB = SY0, SY0 + FW + GAP          # yA: start flight (room side), yB: against back wall
-    x0 = SX0 + START
-    for i in range(NT + 1):
-        x = x0 + i * TREAD
-        v.line(x, yA, x, yA + FW, lw=0.45)
-        v.line(x, yB, x, yB + FW, lw=0.45)
-    v.rect(SX0, SY0 + FW, START + NT * TREAD, GAP, fill=0.6, stroke=False)
-    v.line(x0 + NT * TREAD, SY0, x0 + NT * TREAD, SY0 + SW, lw=0.6)
-    ym1, ym2 = yA + FW / 2, yB + FW / 2
-    xe = x0 + NT * TREAD + LAND / 2
-    v.arrow([(x0 - 0.15, ym1), (xe, ym1), (xe, ym2), (x0 - 0.2, ym2)])
+def main_stair(v, numbers=False):
+    """U-stair in plan (y = -z). Flight 1 on the room side goes up toward axis 4,
+    landing at axis 4 side, flight 2 along the В wall comes back up to floor 1."""
+    yR0, yR1 = -MID0, -SH["z0"]          # flight 1 (room side): z 1,6 … 2,5
+    yW0, yW1 = -SH["z1"], -MID1          # flight 2 (В side):    z 2,7 … 3,6
+    v.rect(SH["x0"], -SH["z1"], SH["x1"], -SH["z0"], fill=0.93)
+    for k in range(8):                   # flight 1 risers: 5,51 … 7,33
+        x = DX1 - k * TR
+        v.line(x, yR0, x, yR1, lw=0.45)
+    for k in range(8):                   # flight 2 risers: 5,25 … 7,07
+        x = SX0 + k * TR
+        v.line(x, yW0, x, yW1, lw=0.45)
+    v.rect(SX0, -MID1, SX0 + 10 * TR, -MID0, fill=0.55)    # core wall between flights
+    ym1, ym2 = (yR0 + yR1) / 2, (yW0 + yW1) / 2
+    xe = (DX1 + SH["x1"]) / 2
+    v.arrow([(DX1 - 7 * TR - 0.2, ym1), (xe, ym1), (xe, ym2), (SX0 - 0.05, ym2)])
+    sz = 9 if numbers else 7
+    v.text(DX1 - 3.5 * TR, ym1 + (0.2 if numbers else 0.12), "боло ↑", size=sz, bold=True)
+    v.text(SX0 + 3.5 * TR, ym2 - (0.33 if numbers else 0.3), "боло ↑", size=sz, bold=True)
     if numbers:
-        for i in range(NT):
-            v.text(x0 + (i + 0.5) * TREAD, ym1 - 0.32, str(i + 1), size=7)
-            v.text(x0 + (NT - 1 - i + 0.5) * TREAD, ym2 + 0.2, str(NT + 2 + i), size=7)
-        v.text(xe, ym1 - 0.32, "8", size=7)
-        v.text(x0 - 0.24, ym2 + 0.2, "16", size=7)
-    v.text(x0 + 1.0, ym1 + (-0.3 if not numbers else 0.2), "боло ↑", size=9 if numbers else 7, bold=True)
-    v.text(x0 + 1.0, ym2 + (0.15 if not numbers else -0.33), "боло ↑", size=9 if numbers else 7, bold=True)
+        for i in range(7):
+            v.text(DX1 - (6 - i + 0.5) * TR, ym1 - 0.33, str(i + 1), size=7)
+            v.text(SX0 + (6 - i + 0.5) * TR, ym2 + 0.2, str(9 + i), size=7)
+        v.text(xe, ym1 - 0.33, "8", size=7)
+        v.text(SX0 - 0.07, ym2 + 0.2, "16", size=7)
+
+
+def step_stair(v, label=True):
+    """3 steps from A down to B beside the column at axis 4."""
+    v.rect(SSX0, -SSZ1, LA, -SSZ0, fill=(0.80, 0.62, 0.42))
+    for k in range(NS):
+        x = SSX0 + k * ST
+        v.line(x, -SSZ1, x, -SSZ0, lw=0.45)
+    v.arrow([(SSX0 - 0.25, -(SSZ0 + SSZ1) / 2), (LA + 0.45, -(SSZ0 + SSZ1) / 2)], lw=0.6, dot=True)
+    if label:
+        v.text(LA + 0.5, -(SSZ0 + SSZ1) / 2 + 0.25, "поён 50", size=7, center=False)
 
 
 # =============================== 1: PLAN ===============================
 frame("нақша", 1)
-v = View(60 * mm, 70 * mm, 50)
-v.rect(0, 0, L, D, fill=0.18, stroke=False)
-v.rect(TE, TE, XD - TI / 2 - TE, D - 2 * TE, fill=(0.86, 0.86, 0.84), stroke=False)
-v.rect(XD + TI / 2, TE, L - TE - XD - TI / 2, D - 2 * TE, fill=(0.96, 0.94, 0.88), stroke=False)
-# openings
-v.rect(XD - TI / 2 - 0.01, DOOR_DIV[0], TI + 0.02, DOOR_DIV[1] - DOOR_DIV[0], fill=1.0, stroke=False)
-X, Y = v.p(XD + TI / 2, DOOR_DIV[0]); r = (DOOR_DIV[1] - DOOR_DIV[0]) * v.k
-c.setLineWidth(0.4); c.line(X, Y, X + r, Y); c.setDash(2, 1.5); c.arc(X - r, Y - r, X + r, Y + r, 0, 90); c.setDash()
-for a, b in WIN:
-    v.rect(a, D - TE - 0.01, b - a, TE + 0.02, fill=1.0, stroke=True, lw=0.4)
-    v.line(a, D - TE / 2, b, D - TE / 2, lw=0.4)
-v.rect(DOOR_BACK[0], D - TE - 0.01, DOOR_BACK[1] - DOOR_BACK[0], TE + 0.02, fill=1.0, stroke=False)
-X, Y = v.p(DOOR_BACK[1], D - TE); r = (DOOR_BACK[1] - DOOR_BACK[0]) * v.k
-c.line(X, Y, X, Y - r); c.setDash(2, 1.5); c.arc(X - r, Y - r, X + r, Y + r, 180, 90); c.setDash()
-for cx, cy in COLS:
-    v.rect(cx - 0.2, cy - 0.2, 0.4, 0.4, fill=0.0, stroke=False)
-stair_plan(v)
-# axes
-for ax, t in ((0.2, "1"), (XD, "2"), (XD + 4.5, "3"), (L - 0.2, "4")):
-    v.line(ax, -1.9, ax, D + 1.9, lw=0.25, dash=(6, 2, 1, 2))
-    X, Y = v.p(ax, D + 2.25); axis_bubble(X, Y, t)
-for ay, t in ((D - 0.2, "А"), (4.0, "Б"), (0.2, "В")):
-    v.line(-2.2, ay, L + 0.6, ay, lw=0.25, dash=(6, 2, 1, 2))
-    X, Y = v.p(-2.55, ay); axis_bubble(X, Y, t)
-# labels (short)
-v.text((TE + XD) / 2, 5.0, "Ҳуҷраи 1", size=10, bold=True)
-v.text(10.3, 5.6, "Ҳуҷраи 2", size=10, bold=True)
-v.text(XD + 0.5, (DOOR_DIV[0] + DOOR_DIV[1]) / 2 - 0.05, "Д-1", size=7.5)
-v.text((DOOR_BACK[0] + DOOR_BACK[1]) / 2, D - TE - 0.95, "Д-2", size=7.5)
-for i, (a, b) in enumerate(WIN, 1):
-    v.text((a + b) / 2, D + 0.12, f"Т-{i}", size=7)
-v.text(COLS[1][0] + 0.3, COLS[1][1] - 0.45, "сутун 40 × 40 см", size=7.5, center=False)
-v.text(SX0 + SL + 0.35, SY0 + 0.1, "Зина", size=9, bold=True, center=False)
-v.dimh(SX0, SX0 + SL, SY0 - 0.25, size=7)
-# dimensions (cm)
-v.dimh(0, L, -1.5)
-v.dimh(0, XD, -1.0); v.dimh(XD, L, -1.0)
-for a, b in ((0, TE), (TE, XD - TI / 2), (XD - TI / 2, XD + TI / 2), (XD + TI / 2, L - TE), (L - TE, L)):
-    v.dimh(a, b, -0.5)
-pts = [XD + TI / 2, DOOR_BACK[0], DOOR_BACK[1], WIN[1][0], WIN[1][1], WIN[0][0], WIN[0][1], L - TE]
-for a, b in zip(pts, pts[1:]): v.dimh(a, b, D + 0.5, size=7)
-v.dimh(XD, XD + 4.5, D + 1.0); v.dimh(XD + 4.5, L, D + 1.0)
-v.dimv(0, D, -1.6)
-v.dimv(0, TE, -1.0); v.dimv(TE, D - TE, -1.0); v.dimv(D - TE, D, -1.0)
-for a, b in ((0, TE), (TE, 4.0), (4.0, SY0), (SY0, D - TE), (D - TE, D)):
-    v.dimv(a, b, L + 1.0)
-v.dimv(0, 4.0, L + 1.5); v.dimv(4.0, D, L + 1.5)
-for a, b in ((TE, DOOR_DIV[0]), DOOR_DIV, (DOOR_DIV[1], D - TE)):
-    v.dimv(a, b, XD - 0.55, size=7)
-# section mark 1-1
-ycut = SY0 + FW / 2
-for xx, side in ((-0.6, 1), (L + 0.6, -1)):
-    X, Y = v.p(xx, ycut)
-    c.setLineWidth(1.4); c.line(X, Y, X + side * 5 * mm, Y)
-    c.line(X, Y, X, Y - 4 * mm); c.setFont("FB", 9); c.drawCentredString(X - side * 3 * mm, Y - 6 * mm, "1")
-v.line(-0.4, ycut, L + 0.4, ycut, lw=0.3, dash=(8, 3))
+v = View(68 * mm, 145 * mm, 50)
+# outer walls
+v.rect(-T, -WD / 2 - T, L + T, WD / 2 + T, fill=0.18)
+v.rect(0, -WD / 2, LA, WD / 2, fill=(0.96, 0.94, 0.88))          # A, tiles
+v.rect(LA, -WD / 2, L, WD / 2, fill=(0.82, 0.82, 0.80))          # B, concrete, 50 lower
+# A/B edge (50 cm drop) and the beam above (dashed)
+v.line(LA, -WD / 2, LA, WD / 2, lw=1.0)
+v.line(BEAM[1], -WD / 2, BEAM[1], WD / 2, lw=0.4, dash=(4, 2))
+# openings in the В wall (bottom)
+yW = -WD / 2
+v.rect(DOOR[0], yW - T - 0.01, DOOR[1], yW + 0.01, fill=1.0)
+X, Y = v.p(DOOR[1], yW); r = (DOOR[1] - DOOR[0]) * v.k
+c.setLineWidth(0.4); c.line(X, Y, X, Y + r); c.setDash(2, 1.5); c.arc(X - r, Y - r, X + r, Y + r, 90, 90); c.setDash()
+for name, a, b in WINS:
+    v.rect(a, yW - T - 0.01, b, yW + 0.01, fill=1.0, stroke=True, lw=0.4)
+    v.line(a, yW - T / 2, b, yW - T / 2, lw=0.4)
+    v.text((a + b) / 2, yW + 0.2, name, size=7)
+v.text(sum(DOOR) / 2 - 0.2, yW + 1.05, "Д-1", size=7.5)
+# columns
+for cx, cz in COLS:
+    v.rect(cx - COL / 2, -cz - COL / 2, cx + COL / 2, -cz + COL / 2, fill=0.0)
+v.text(COLS[0][0] + 0.3, -COLS[0][1] + 0.3, "сутун 40 × 40 см", size=7.5, center=False)
+main_stair(v)
+step_stair(v)
+v.text((SH["x0"] + SH["x1"]) / 2, -SH["z0"] + 0.25, "Зина", size=9, bold=True)
+v.text(3.0, 1.6, "Ҳуҷраи 1", size=10, bold=True)
+v.text(L - LB / 2 + 0.15, 1.6, "Ҳуҷраи 2", size=10, bold=True)
+v.text(L - LB / 2 + 0.15, 1.15, "фарш 50 см пасттар", size=7.5)
+# axes as on the 1st-floor plan
+for ax, t in ((0, "2"), (4.5, "3"), (LA, "4"), (L, "5")):
+    v.line(ax, -WD / 2 - 2.0, ax, WD / 2 + 2.0, lw=0.25, dash=(6, 2, 1, 2))
+    X_, Y_ = v.p(ax, WD / 2 + 2.35); axis_bubble(X_, Y_, t)
+for az, t in ((-4, "А"), (0, "Б"), (4, "В")):
+    v.line(-2.3, -az, L + 2.3, -az, lw=0.25, dash=(6, 2, 1, 2))
+    X_, Y_ = v.p(-2.65, -az); axis_bubble(X_, Y_, t)
+# dimensions
+v.chainh([0, 4.5, LA, L], WD / 2 + 0.8)
+v.chainh([-T, 0, LA, BEAM[1], L, L + T], WD / 2 + 1.3)
+v.dimh(-T, L + T, WD / 2 + 1.8)
+v.chainh([0, WINS[0][1], WINS[0][2], WINS[1][1], WINS[1][2], DOOR[0], DOOR[1], SH["x0"], SH["x1"], LA, L],
+         -WD / 2 - 0.75, size=7)
+v.chainh([SSX0, SSX0 + ST, LA], -SSZ1 - 0.35, size=6.5)
+v.chainv([-4, 0, 4], -1.0)
+v.dimv(-4 - T, 4 + T, -1.6)
+v.chainv([-4, -SH["z1"], -SH["z0"], -SSZ1, -SSZ0, 0, 4], L + 1.0, size=7)
+v.chainv([-4 - T, -4], L + 1.0, size=7); v.chainv([4, 4 + T], L + 1.0, size=7)
+# section mark 1-1 through flight 1
+ycut = -(SH["z0"] + MID0) / 2
+for xx, side in ((-0.7, 1), (L + 0.7, -1)):
+    X_, Y_ = v.p(xx, ycut)
+    c.setLineWidth(1.4); c.line(X_, Y_, X_ + side * 5 * mm, Y_)
+    c.line(X_, Y_, X_, Y_ - 4 * mm); c.setFont("FB", 9); c.drawCentredString(X_ - side * 3 * mm, Y_ - 6 * mm, "1")
+v.line(-0.5, ycut, L + 0.5, ycut, lw=0.3, dash=(8, 3))
 c.showPage()
 
 # =============================== 2: SECTION ===============================
 frame("буриши 1-1", 2)
-s = View(70 * mm, 150 * mm, 50)
-TOP, SLAB = 1.5, 0.25
-s.rect(-0.1, -1.5, L + 0.2, 0.5, fill=0.55, stroke=True)                      # plate 50
-s.rect(TE, -1.0, XD - TI / 2 - TE, 0.5, fill=(0.82, 0.76, 0.62), stroke=True)  # raised floor room 1
-for x0_, w_ in ((0, TE), (L - TE, TE)):
-    s.rect(x0_, -1.0, w_, TOP + 1.0, fill=0.18, stroke=False)
-s.rect(XD - TI / 2, -1.0, TI, TOP + 1.0, fill=0.35, stroke=False)
-s.rect(-0.1, TOP, SX0 + 0.1, SLAB, fill=0.35, stroke=False)
-s.rect(SX0 + SL, TOP, L + 0.1 - SX0 - SL, SLAB, fill=0.35, stroke=False)
-r = RISE / 100
-x0 = SX0 + START
-land_y = -1.0 + 8 * r
-pts = [(SX0, -1.0), (x0, -1.0)]
-for i in range(NT):
-    pts += [(x0 + i * TREAD, -1.0 + (i + 1) * r), (x0 + (i + 1) * TREAD, -1.0 + (i + 1) * r)]
-pts += [(x0 + NT * TREAD, land_y), (SX0 + SL, land_y)]
-c.setLineWidth(0.6)
-path = c.beginPath(); path.moveTo(*s.p(*pts[0]))
-for q in pts[1:]: path.lineTo(*s.p(*q))
-path.lineTo(*s.p(SX0 + SL, land_y - 0.18)); path.lineTo(*s.p(x0 + NT * TREAD, land_y - 0.18))
-path.lineTo(*s.p(x0 + 0.15, -1.0)); path.close()
-c.setFillGray(0.55); c.drawPath(path, stroke=1, fill=1); c.setFillGray(0)
-c.setDash(2, 1.5); c.setLineWidth(0.4)
-path = c.beginPath(); path.moveTo(*s.p(x0 + NT * TREAD, land_y))
-for i in range(NT):
-    xa = x0 + (NT - i) * TREAD
-    path.lineTo(*s.p(xa, land_y + (i + 1) * r)); path.lineTo(*s.p(xa - TREAD, land_y + (i + 1) * r))
-path.lineTo(*s.p(SX0, land_y + 8 * r))
-c.drawPath(path, stroke=1, fill=0); c.setDash()
-s.text(2.2, 0.6, "Ҳуҷраи 1", size=10, bold=True)
-s.text(10.3, 0.6, "Ҳуҷраи 2", size=10, bold=True)
-# vertical dims (cm)
-s.dimv(-0.5, TOP, 1.0)                 # 200
-s.dimv(-1.0, -0.5, 1.0)                # 50
-s.dimv(-1.0, TOP, 11.5)                # 250
-s.dimv(TOP, TOP + SLAB, L + 0.6)       # 25
-s.dimv(-1.0, TOP, L + 0.6)             # 250
-s.dimv(-1.5, -1.0, L + 0.6)            # 50
-s.dimv(-1.5, TOP + SLAB, L + 1.2)      # 325
-s.dimv(-1.0, land_y, SX0 + SL + 0.3, "137,5")
-s.dimh(0, XD, -2.1); s.dimh(XD, L, -2.1)
-s.dimh(SX0, x0, -2.5); s.dimh(x0, x0 + NT * TREAD, -2.5, "7 × 26 = 182"); s.dimh(x0 + NT * TREAD, SX0 + SL, -2.5)
-c.setFont("FB", 10); X, Y = s.p(0, 2.6); c.drawString(X, Y, "БУРИШИ 1-1")
+s = View(62 * mm, 120 * mm, 50)
+yB = -DROP
+# slabs under floors
+s.rect(-T, -SLAB, LA, 0, fill=0.55, stroke=True)
+s.rect(LA, yB - SLAB, L + T, yB, fill=0.55, stroke=True)
+s.rect(LA - 0.01, yB - SLAB, LA + 0.01, 0, fill=0.55)
+# outer walls
+s.rect(-T, -SLAB, 0, HA + CEIL, fill=0.18)
+s.rect(L, yB - SLAB, L + T, YBT + CEIL, fill=0.18)
+# ceilings: A with the stair opening, B lower, beam between
+s.rect(-T, HA, SH["x0"], HA + CEIL, fill=0.35)
+s.rect(SH["x1"], HA, LA, HA + CEIL, fill=0.35)
+s.rect(LA, YBT, BEAM[1], HA + CEIL, fill=0.35)
+s.rect(BEAM[1], YBT, L + T, YBT + CEIL, fill=0.35)
+s.rect(-T, HA + CEIL, SH["x0"], F1, fill=0.75)                   # floor-1 finish
+s.rect(SH["x1"], HA + CEIL, LA + T, F1, fill=0.75)
+# earth over B (under the driveway)
+s.rect(BEAM[1], YBT + CEIL, L + T, F1, fill=(0.80, 0.72, 0.58))
+s.line(-T - 0.8, F1 - FIN, L + T + 0.8, F1 - FIN, lw=0.5)
+# main stair flight 1 (cut), rising toward axis 4
+pts = [(SH["x0"], 0), (DX1 - 7 * TR, 0)]
+for i in range(7):
+    xa = DX1 - (7 - i) * TR
+    pts += [(xa, (i + 1) * RD), (xa + TR, (i + 1) * RD)]
+pts += [(DX1, LAND), (SH["x1"], LAND), (SH["x1"], LAND - 0.18), (DX1, LAND - 0.18), (DX1 - 7 * TR + 0.15, 0)]
+s.poly(pts, fill=0.55)
+# flight 2 beyond (dashed), back up to floor 1
+p2 = [(DX1, LAND)]
+for k in range(7):
+    xa = DX1 - k * TR - TR
+    p2 += [(xa + TR, LAND + (k + 1) * RD), (xa, LAND + (k + 1) * RD)]
+p2 += [(SX0, F1)]
+s.poly(p2, lw=0.4, dash=(2, 1.5), close=False)
+s.text(3.0, 1.2, "Ҳуҷраи 1", size=10, bold=True)
+s.text(L - LB / 2 + 0.15, 0.6, "Ҳуҷраи 2", size=10, bold=True)
+# vertical dims
+s.chainv([-SLAB, 0, HA, HA + CEIL, F1], -1.0)
+s.dimv(-SLAB, F1, -1.6)
+s.chainv([0, LAND], SH["x0"] - 0.35)
+s.chainv([YBT, HA + CEIL], LA + 0.75)
+s.chainv([yB - SLAB, yB, YBT, YBT + CEIL], L + 1.0)
+s.dimv(yB, 0, L + 1.6)
+# horizontal dims
+s.chainh([-T, 0, LA, BEAM[1], L, L + T], -1.2)
+s.chainh([SH["x0"], DX1 - 7 * TR, DX1, SH["x1"], LA], -0.75, size=7)
+c.setFont("FB", 10); X_, Y_ = s.p(-T, F1 + 0.7); c.drawString(X_, Y_, "БУРИШИ 1-1")
 c.showPage()
 
-# =============================== 3: STAIR ===============================
-frame("зина", 3)
-d = View(50 * mm, 95 * mm, 25, off=(SX0 - 0.35, SY0 - 0.4))
-d.rect(SX0 - 0.35, SY0 + SW, SL + 0.7, TE, fill=0.18, stroke=False)
-d.rect(SX0 - TI, SY0 - 0.25, TI, SW + 0.25, fill=0.35, stroke=False)
-stair_plan(d, numbers=True)
-d.dimh(SX0, x0, SY0 - 0.6); d.dimh(x0, x0 + NT * TREAD, SY0 - 0.6, "7 × 26 = 182")
-d.dimh(x0 + NT * TREAD, SX0 + SL, SY0 - 0.6)
-d.dimh(SX0, SX0 + SL, SY0 - 0.95)
-d.dimv(SY0, SY0 + FW, SX0 + SL + 0.3); d.dimv(SY0 + FW, SY0 + FW + GAP, SX0 + SL + 0.3)
-d.dimv(SY0 + FW + GAP, SY0 + SW, SX0 + SL + 0.3)
-d.dimv(SY0, SY0 + SW, SX0 + SL + 0.65)
-c.setFont("FB", 10); X, Y = d.p(SX0 - 0.3, SY0 + SW + 0.65); c.drawString(X, Y, "НАҚШАИ ЗИНА")
-tx, ty = 270 * mm, 190 * mm
+# =============================== 3: STAIRS ===============================
+frame("зинаҳо", 3)
+d = View(30 * mm, 105 * mm, 25, off=(SH["x0"] - 0.3, -4 - T))
+d.rect(SH["x0"] - 0.3, -4 - T, SH["x1"] + 0.5, -4, fill=0.18)     # В wall
+main_stair(d, numbers=True)
+d.chainh([SH["x0"], SX0, DX1 - 7 * TR, DX1, SH["x1"]], -SH["z0"] + 0.3, size=7)
+d.dimh(SH["x0"], SH["x1"], -SH["z0"] + 0.62)
+d.chainv([-4, -SH["z1"], -MID1, -MID0, -SH["z0"]], SH["x1"] + 0.3, size=7)
+c.setFont("FB", 10); X_, Y_ = d.p(SH["x0"] - 0.3, -SH["z0"] + 0.95); c.drawString(X_, Y_, "ЗИНАИ АСОСӢ (ба ошёнаи 1)")
 c.setFont("F", 9)
-for i, t in enumerate(["16 пиллакон", "баландӣ 17,2 см", "умқ 26 см", "бари марш 90 см"]):
-    c.drawString(tx, ty - i * 6 * mm, t)
+for i, t in enumerate(["16 пиллакон", f"баландӣ {cm(RD)} см", "умқ 26 см", "бари марш 90 см",
+                       f"майдонча дар {cm(LAND)} см"]):
+    c.drawString(32 * mm, 94 * mm - i * 6 * mm, t)
+
+# step stair A → B: plan and profile
+e = View(245 * mm, 150 * mm, 25, off=(SSX0 - 0.8, -SSZ1 - 0.3))
+e.rect(SSX0 - 0.6, -SSZ1 - 0.1, LA, -SSZ0 + 0.1, fill=(0.96, 0.94, 0.88))
+e.rect(LA, -SSZ1 - 0.1, LA + 0.7, -SSZ0 + 0.1, fill=(0.82, 0.82, 0.80))
+step_stair(e, label=False)
+e.rect(LA - COL / 2, -COL / 2 + 0.0, LA + COL / 2, COL / 2, fill=0.0)
+e.chainh([SSX0, SSX0 + ST, LA], -SSZ1 - 0.25, size=7)
+e.dimv(-SSZ1, -SSZ0, LA + 0.85, size=7)
+e.text(LA - 0.6, -SSZ0 + 0.35, "сутун", size=7)
+c.setFont("FB", 10); X_, Y_ = e.p(SSX0 - 0.8, 0.55); c.drawString(X_, Y_, "3 ПИЛЛАКОН АЗ ҲУҶРАИ 1 БА ҲУҶРАИ 2")
+f = View(245 * mm, 80 * mm, 25, off=(SSX0 - 0.8, -0.7))
+prof = [(SSX0 - 0.6, 0), (SSX0, 0), (SSX0, -SR), (SSX0 + ST, -SR), (SSX0 + ST, -2 * SR), (LA, -2 * SR), (LA, -DROP),
+        (LA + 0.8, -DROP), (LA + 0.8, -0.7), (SSX0 - 0.6, -0.7)]
+f.poly(prof, fill=0.6)
+f.dimv(-DROP, 0, LA + 1.0, "3 × 16,7 = 50", size=7)
+f.chainh([SSX0, SSX0 + ST, LA], 0.25, size=7)
+f.text(SSX0 - 0.3, 0.08, "Ҳуҷраи 1", size=7)
+f.text(LA + 0.4, -DROP + 0.08, "Ҳуҷраи 2", size=7)
+c.setFont("F", 9)
+for i, t in enumerate(["3 пиллакон × 16,7 см", "умқ 28 см", "бар 120 см"]):
+    c.drawString(247 * mm, 66 * mm - i * 6 * mm, t)
 c.showPage()
 
 # =============================== 4: TABLES ===============================
-frame("дару тиреза", 4)
+frame("ҳуҷраҳо, дару тиреза", 4)
 
 
 def table(x, y, cols, widths, rows, title):
@@ -289,17 +355,16 @@ def table(x, y, cols, widths, rows, title):
             xx += w
 
 
-table(30 * mm, 255 * mm, ["Ҳуҷра", "Андоза (тоза), см", "Баландӣ, см"],
-      [50 * mm, 55 * mm, 40 * mm],
-      [["Ҳуҷраи 1", "350 × 720", "200"],
-       ["Ҳуҷраи 2", "850 × 720", "250"],
-       ["Зина", "350 × 200", "—"]],
+table(30 * mm, 255 * mm, ["Ҳуҷра", "Андоза (дохил), см", "Баландӣ, см", "Фарш"],
+      [45 * mm, 50 * mm, 35 * mm, 50 * mm],
+      [["Ҳуҷраи 1", "900 × 800", "250", "кошин"],
+       ["Ҳуҷраи 2", "400 × 800", "200", "бетон, 50 см пасттар"],
+       ["Зина", "350 × 200", "—", ""]],
       "Ҳуҷраҳо")
-table(30 * mm, 200 * mm, ["", "Бар × баландӣ, см", "Ҷой"],
-      [25 * mm, 55 * mm, 70 * mm],
-      [["Д-1", "90 × 200", "байни ҳуҷраҳо"],
-       ["Д-2", "80 × 190", "девори қафо"],
-       ["Т-1", "90 × 50", "девори қафо"],
-       ["Т-2", "80 × 50", "девори қафо"]],
+table(30 * mm, 200 * mm, ["", "Бар × баландӣ, см", "Аз фарш, см", "Ҷой"],
+      [20 * mm, 50 * mm, 35 * mm, 65 * mm],
+      [["Д-1", "90 × 205", "0", "девори В, дари даромад"],
+       ["Т-1", "120 × 55", "175", "девори В"],
+       ["Т-2", "120 × 55", "175", "девори В"]],
       "Дару тиреза")
 c.save()
