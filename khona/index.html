@@ -1,0 +1,1116 @@
+<title>Хона</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+  /* Layout: one column — 3D stage first, then section drawing, then editable sizes */
+  :root {
+    --bg: #f3f4f1;
+    --surface: #ffffff;
+    --fg: #1d2420;
+    --muted: #5d6862;
+    --line: #d6dbd5;
+    --stage: #dfe4de;
+    --zone-a: #c98b4f;
+    --zone-b: #4f7fa8;
+    --on: #1d2420;
+    --on-fg: #ffffff;
+    --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    --body: "Inter", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151916; --surface: #1e2420; --fg: #e8ece7; --muted: #9aa59e;
+      --line: #333c36; --stage: #262d28; --zone-a: #dba06a; --zone-b: #74a2c9;
+      --on: #e8ece7; --on-fg: #151916;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151916; --surface: #1e2420; --fg: #e8ece7; --muted: #9aa59e;
+    --line: #333c36; --stage: #262d28; --zone-a: #dba06a; --zone-b: #74a2c9;
+    --on: #e8ece7; --on-fg: #151916;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--body);
+    line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 48px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 24px; }
+  h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); letter-spacing: -0.01em; }
+  h2 { font-size: 1.15rem; }
+  .lead { color: var(--muted); margin: 6px 0 0; max-width: 65ch; }
+  .stage {
+    position: relative; background: var(--stage); border-radius: 10px;
+    height: clamp(380px, 66vh, 660px); overflow: hidden; touch-action: none;
+  }
+  .stage canvas { display: block; width: 100%; height: 100%; }
+  .hint {
+    position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted);
+    pointer-events: none; padding-right: 12px;
+  }
+  .bar { position: absolute; left: 10px; right: 10px; top: 10px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: space-between; pointer-events: none; }
+  .bar .grp { display: flex; gap: 6px; flex-wrap: wrap; pointer-events: auto; }
+  .bar button, .reset {
+    font: 500 13px var(--body); color: var(--fg); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer;
+  }
+  .bar button[aria-pressed="true"] { background: var(--on); color: var(--on-fg); border-color: var(--on); }
+  .bar button:focus-visible, .reset:focus-visible, input:focus-visible { outline: 2px solid var(--zone-b); outline-offset: 2px; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+  .zone-tag { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+  .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+  label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+  input[type=number] {
+    font: 500 16px var(--body); color: var(--fg); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%;
+    box-sizing: border-box; font-variant-numeric: tabular-nums;
+  }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  th { font-weight: 500; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .n { text-align: right; }
+  .section-box { overflow-x: auto; }
+  .section-box svg { display: block; width: 100%; min-width: 520px; height: auto; }
+  .note { font-size: 13px; color: var(--muted); margin: 0; }
+  ul.note { padding-left: 18px; display: grid; gap: 4px; }
+  [hidden] { display: none !important; }
+  .share-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  #share-link {
+    flex: 1 1 260px; min-width: 0; font: 400 14px var(--body); color: var(--fg); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px;
+  }
+  .walk {
+    position: absolute; right: 12px; bottom: 34px; display: grid; gap: 6px;
+    grid-template-areas: ". f ." "l . r" ". b ."; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px);
+  }
+  .walk button {
+    font: 600 18px var(--body); color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 50%; opacity: 0.88; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  .walk button[aria-pressed="true"] { background: var(--on); color: var(--on-fg); }
+  /* full screen: real Fullscreen API where allowed, otherwise the stage covers the window */
+  .stage.full {
+    position: fixed; inset: 0; z-index: 50; height: 100%; width: 100%; border-radius: 0;
+  }
+  .stage:fullscreen { height: 100%; width: 100%; border-radius: 0; }
+  .stage.full .bar, .stage:fullscreen .bar {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    left: calc(10px + env(safe-area-inset-left, 0px));
+    right: calc(10px + env(safe-area-inset-right, 0px));
+  }
+  .stage.full .walk, .stage:fullscreen .walk {
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(34px + env(safe-area-inset-bottom, 0px));
+  }
+  .stage.full .hint, .stage:fullscreen .hint {
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  body.no-scroll { overflow: hidden; }
+  /* phone turned sideways: let the model fill the screen height */
+  @media (orientation: landscape) and (max-height: 520px) {
+    .stage { height: calc(100vh - 24px); }
+  }
+  body.viewer .stage { height: clamp(420px, 82vh, 860px); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Хона</h1>
+    <p class="lead" id="lead">Ошёнаи 1: хонаи 9 × 8 м бо ду ҳуҷра, ошхона, даҳлез ва зина, айвон, боғча ва ду гузаргоҳи мошин. Таҳхона 13 × 8 м дар зери он: қисми 9 × 8 м бо баландии 2,50 м ва қисми 4 × 8 м (зери гузаргоҳи рост), ки 50 см пасттар аст. Сатҳро интихоб кунед, «Аз дарун»-ро пахш кунед.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="bar">
+      <div class="grp">
+        <button type="button" id="v-3d" aria-pressed="true">3D</button>
+        <button type="button" id="v-in" aria-pressed="false">Аз дарун</button>
+        <button type="button" id="v-top" aria-pressed="false">Аз боло</button>
+        <button type="button" id="v-side" aria-pressed="false">Аз паҳлу</button>
+      </div>
+      <div class="grp">
+        <button type="button" id="lv-all" aria-pressed="true">Ҳама</button>
+        <button type="button" id="lv-1" aria-pressed="false">Ошёнаи 1</button>
+        <button type="button" id="lv-b" aria-pressed="false">Таҳхона</button>
+      </div>
+      <div class="grp">
+        <button type="button" id="t-ceil" aria-pressed="false">Шифт</button>
+        <button type="button" id="t-dim" aria-pressed="true">Андозаҳо</button>
+        <button type="button" id="t-full" aria-pressed="false">⛶ Пурра</button>
+      </div>
+    </div>
+    <div class="walk" id="walk" hidden>
+      <button type="button" data-m="1,0" aria-label="Пеш" style="grid-area:f">▲</button>
+      <button type="button" data-m="0,-1" aria-label="Чап" style="grid-area:l">◀</button>
+      <button type="button" data-m="0,1" aria-label="Рост" style="grid-area:r">▶</button>
+      <button type="button" data-m="-1,0" aria-label="Қафо" style="grid-area:b">▼</button>
+    </div>
+    <div class="hint" id="hint">Гардонидан: кашидан · Калон/хурд: ду ангушт ё чархак · Ҳаракат: ду ангушт ё тугмаи рост</div>
+  </div>
+
+  <div class="panel" id="share-panel">
+    <h2>Фиристодан ба дӯст</h2>
+    <p class="note">Ин пайванд танҳо модели 3D-ро бо андозаҳои ҳозира нишон медиҳад: бе танзимот, бе буриш ва бе ҳисоб. Аввал андозаҳоро танзим кунед, баъд нусха гиред.</p>
+    <div class="share-row">
+      <input id="share-link" type="text" readonly aria-label="Пайванд барои дӯст">
+      <button type="button" class="reset" id="share-copy">Нусха гирифтан</button>
+    </div>
+    <p class="note" id="share-msg" aria-live="polite"></p>
+  </div>
+
+  <div class="panel" id="section-panel">
+    <h2>Буриш аз паҳлу (таҳхона)</h2>
+    <div class="section-box" id="section"></div>
+    <p class="note">Хати ғафс — фарш. Сатҳи ±0,00 — фарши қисми калон.</p>
+  </div>
+
+  <div class="grid2" id="settings">
+    <div class="panel">
+      <h2>Андозаҳо</h2>
+      <span class="zone-tag"><span class="sw" style="background:var(--zone-a)"></span>Қисми калон (A)</span>
+      <div class="fields">
+        <label for="la">Дарозӣ, м<input id="la" type="number" step="0.01" min="2" value="9"></label>
+        <label for="ha">Баландӣ, м<input id="ha" type="number" step="0.01" min="1" value="2.5"></label>
+      </div>
+      <span class="zone-tag"><span class="sw" style="background:var(--zone-b)"></span>Қисми пастшуда (B)</span>
+      <div class="fields">
+        <label for="lb">Дарозӣ, м<input id="lb" type="number" step="0.01" min="1" value="4"></label>
+        <label for="hb">Баландӣ, м<input id="hb" type="number" step="0.01" min="1" value="2"></label>
+        <label for="drop">Фарш пасттар, м<input id="drop" type="number" step="0.01" min="0" value="0.5"></label>
+      </div>
+      <span class="zone-tag">Умумӣ</span>
+      <div class="fields">
+        <label for="w">Паҳнӣ (ҳарду қисм), м<input id="w" type="number" step="0.01" min="2" value="8"></label>
+      </div>
+      <button type="button" class="reset" id="reset">Андозаҳои аввала</button>
+    </div>
+
+    <div class="panel">
+      <h2>Ҳисоб</h2>
+      <table>
+        <thead><tr><th>Қисм</th><th class="n">Масоҳат</th><th class="n">Ҳаҷм</th></tr></thead>
+        <tbody id="calc"></tbody>
+      </table>
+      <ul class="note" id="calc-note"></ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  const DEF = { la: 9, lb: 4, w: 8, ha: 2.5, hb: 2, drop: 0.5 };
+  const ARTIFACT_URL = /github\.io$/.test(location.hostname) ? location.origin + location.pathname : "https://claude.ai/artifact/EJ4hAjPUMCqx8e63xDN1rq";
+  const SHARE_ORDER = ["la", "lb", "w", "ha", "hb", "drop"];
+  const P = Object.assign({}, DEF);
+  const ids = Object.keys(DEF);
+  const T = 0.3;      // wall thickness
+  const SLAB = 0.15;  // floor slab under the lowest floor
+  const CEIL = 0.2;   // ceiling slab
+  const STAIR_W = 1.2, TREAD = 0.28;
+  const STAIR_Z = 1.1;   // stair centre, moved beside the column on the centre line
+  const COL = 0.4;       // column size, 40 × 40 cm
+  // columns on the centre line: middle of A, and 4.5 m further at the front of B
+  const columns = () => [{ x: P.la / 2, z: 0 }, { x: P.la / 2 + 4.5, z: 0 }].filter((c) => c.x + COL / 2 < P.la + P.lb - 0.1);
+  const DOOR_X = 4, DOOR_W = 0.9, DOOR_H = 2.05;
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const fmt = (v, d = 2) => Number(v).toLocaleString("ru-RU", { minimumFractionDigits: 0, maximumFractionDigits: d });
+
+  // ---------- renderer ----------
+  const stage = document.getElementById("stage");
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  stage.prepend(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 200);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.minDistance = 0.2;
+  controls.maxDistance = 60;
+
+  scene.add(new THREE.HemisphereLight(0xfffaf0, 0x6f6a60, 0.55));
+  const sun = new THREE.DirectionalLight(0xfff4e0, 0.75);
+  sun.position.set(7, 16, 9);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.bias = -0.0005;
+  Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 50 });
+  scene.add(sun);
+
+  // ---------- textures (drawn on canvas, sized in metres) ----------
+  const texBase = {};
+  function makeTex(kind) {
+    if (texBase[kind]) return texBase[kind];
+    const c = document.createElement("canvas");
+    c.width = c.height = 256;
+    const g = c.getContext("2d");
+    const speck = (n, a, b) => { for (let i = 0; i < n; i++) { g.fillStyle = Math.random() < 0.5 ? a : b; g.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); } };
+    let metres = 2;
+    if (kind === "tile") {           // 60 × 60 cm porcelain tiles, 2 × 2 per texture
+      metres = 1.2;
+      g.fillStyle = "#d8d1c4"; g.fillRect(0, 0, 256, 256);
+      speck(900, "#cfc7b9", "#e1dbcf");
+      g.fillStyle = "#a79f90";
+      [0, 128].forEach((p) => { g.fillRect(p, 0, 3, 256); g.fillRect(0, p, 256, 3); });
+    } else if (kind === "concrete") {
+      metres = 2;
+      g.fillStyle = "#a4a7a2"; g.fillRect(0, 0, 256, 256);
+      speck(2500, "#979a95", "#b3b6b0");
+    } else if (kind === "plaster") {
+      metres = 2;
+      g.fillStyle = "#eee9e0"; g.fillRect(0, 0, 256, 256);
+      speck(1200, "#e6e0d6", "#f5f1ea");
+    } else if (kind === "wood") {
+      metres = 1;
+      g.fillStyle = "#a87c52"; g.fillRect(0, 0, 256, 256);
+      g.strokeStyle = "rgba(70,40,15,0.25)";
+      for (let y = 4; y < 256; y += 9) { g.beginPath(); g.moveTo(0, y); g.bezierCurveTo(80, y + 3, 170, y - 3, 256, y + 1); g.stroke(); }
+    } else if (kind === "grass") {
+      metres = 2;
+      g.fillStyle = "#7f9a5a"; g.fillRect(0, 0, 256, 256);
+      speck(4000, "#6f8a4c", "#93ad6b");
+    } else if (kind === "asphalt") {
+      metres = 3;
+      g.fillStyle = "#5d605f"; g.fillRect(0, 0, 256, 256);
+      speck(3500, "#535655", "#6a6d6c");
+    } else if (kind === "paving") {    // 40 × 40 cm pavers
+      metres = 1.6;
+      g.fillStyle = "#c9c2b5"; g.fillRect(0, 0, 256, 256);
+      speck(1500, "#bfb8aa", "#d3ccbf");
+      g.fillStyle = "#a69e90";
+      [0, 64, 128, 192].forEach((q) => { g.fillRect(q, 0, 2, 256); g.fillRect(0, q, 256, 2); });
+    } else if (kind === "soil") {
+      metres = 3;
+      g.fillStyle = "#8a7a62"; g.fillRect(0, 0, 256, 256);
+      speck(3000, "#7c6c55", "#988870");
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.encoding = THREE.sRGBEncoding;
+    t.anisotropy = 4;
+    texBase[kind] = { t, metres };
+    return texBase[kind];
+  }
+  const ROUGH = { tile: 0.55, concrete: 0.95, plaster: 0.92, wood: 0.7, soil: 1, grass: 1, asphalt: 0.95, paving: 0.9 };
+  function texMat(kind, a, b) {
+    const base = makeTex(kind);
+    const t = base.t.clone();
+    t.needsUpdate = true;
+    t.repeat.set(a / base.metres, b / base.metres);
+    return new THREE.MeshStandardMaterial({ map: t, roughness: ROUGH[kind] });
+  }
+  const metal = new THREE.MeshStandardMaterial({ color: 0x2b2f2d, roughness: 0.4, metalness: 0.6 });
+  const frame = new THREE.MeshStandardMaterial({ color: 0xf4f4f2, roughness: 0.5 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x9cc6e0, transparent: true, opacity: 0.35, roughness: 0.05 });
+  const lamp = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff3d6, emissiveIntensity: 1 });
+  const shared = new Set([metal, frame, glass, lamp]);
+
+  // ---------- scene graph ----------
+  let root = new THREE.Group(), walls, ceiling, dims;
+  scene.add(root);
+  let ox = 0;
+  // first floor (from the plan): ±0,000 sits on top of the basement ceiling
+  let f1, f1ceil, f1dims, f1base, fillB;
+  let G0 = 0, F1 = 0;               // ground level, finished floor of floor 1
+  const H1 = 3.0, H1F = 3.3;         // clear height, floor-to-floor
+  const W1 = 0.4, WI = 0.2;          // outer and inner wall thickness on floor 1
+  let solids1 = [];                  // walls you can't walk through on floor 1 (plan rects)
+
+  // box in plan coordinates: x along the 13 m, y up, z across the 8 m
+  // m: material, a texture kind, or {top, side} kinds
+  function box(parent, x0, x1, y0, y1, z0, z1, m, shadow = true) {
+    const sx = x1 - x0, sy = y1 - y0, sz = z1 - z0;
+    if (sx < 0.005 || sy < 0.005 || sz < 0.005) return null;
+    let mat;
+    if (m && m.isMaterial) mat = m;
+    else if (typeof m === "string") { const d = [sx, sy, sz].sort((p, q) => q - p); mat = texMat(m, d[0], d[1]); }
+    else {
+      const top = texMat(m.top, sx, sz), side = texMat(m.side, Math.max(sx, sz), sy);
+      mat = [side, side, top, side, side, side];
+    }
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
+    mesh.position.set(ox + x0 + sx / 2, y0 + sy / 2, z0 + sz / 2);
+    mesh.castShadow = shadow; mesh.receiveShadow = true;
+    parent.add(mesh);
+    return mesh;
+  }
+
+  // wall running along x, with window holes {a, b, lo, hi}
+  function wallX(x0, x1, y0, y1, z0, z1, holes) {
+    let cur = x0;
+    holes.forEach((h) => {
+      box(walls, cur, h.a, y0, y1, z0, z1, "plaster");
+      box(walls, h.a, h.b, y0, h.lo, z0, z1, "plaster");
+      box(walls, h.a, h.b, h.hi, y1, z0, z1, "plaster");
+      const f = 0.05, zm = (z0 + z1) / 2;
+      if (h.door) {
+        // frame on three sides, closed wooden leaf, handle on the inside
+        box(walls, h.a, h.b, h.hi - f, h.hi, z0, z1, frame);
+        box(walls, h.a, h.a + f, h.lo, h.hi, z0, z1, frame);
+        box(walls, h.b - f, h.b, h.lo, h.hi, z0, z1, frame);
+        box(walls, h.a + f, h.b - f, h.lo, h.hi - f, zm - 0.025, zm + 0.025, "wood");
+        box(walls, h.b - f - 0.14, h.b - f - 0.06, 1.0, 1.03, zm - 0.1, zm - 0.025, metal);
+        cur = h.b;
+        return;
+      }
+      box(walls, h.a, h.b, h.lo, h.lo + f, z0, z1, frame);
+      box(walls, h.a, h.b, h.hi - f, h.hi, z0, z1, frame);
+      box(walls, h.a, h.a + f, h.lo, h.hi, z0, z1, frame);
+      box(walls, h.b - f, h.b, h.lo, h.hi, z0, z1, frame);
+      box(walls, (h.a + h.b) / 2 - f / 2, (h.a + h.b) / 2 + f / 2, h.lo, h.hi, zm - 0.03, zm + 0.03, frame);
+      box(walls, h.a + f, h.b - f, h.lo + f, h.hi - f, zm - 0.01, zm + 0.01, glass, false);
+      // inner sill
+      box(walls, h.a - 0.05, h.b + 0.05, h.lo - 0.03, h.lo, z0 - 0.06, z0 + 0.02, frame);
+      cur = h.b;
+    });
+    box(walls, cur, x1, y0, y1, z0, z1, "plaster");
+  }
+
+  // railing along x or z at floor level y
+  function railing(x0, x1, z0, z1, y, h = 0.95) {
+    const alongX = (x1 - x0) >= (z1 - z0);
+    const len = alongX ? x1 - x0 : z1 - z0;
+    const n = Math.max(1, Math.round(len / 1.0));
+    for (let i = 0; i <= n; i++) {
+      const p = (alongX ? x0 : z0) + (len * i) / n;
+      if (alongX) box(walls, p - 0.02, p + 0.02, y, y + h, z0 - 0.02, z0 + 0.02, metal);
+      else box(walls, x0 - 0.02, x0 + 0.02, y, y + h, p - 0.02, p + 0.02, metal);
+    }
+    [h, h * 0.5].forEach((hh, k) => {
+      const t = k ? 0.012 : 0.025;
+      if (alongX) box(walls, x0, x1, y + hh - t, y + hh + t, z0 - t, z0 + t, metal);
+      else box(walls, x0 - t, x0 + t, y + hh - t, y + hh + t, z0, z1, metal);
+    });
+  }
+
+  // wall along x (axis "x": a = x, c = z) or along z (a = z, c = x)
+  // holes: {a, b, lo, hi, type: "win" | "door" | "open"}, lo/hi above y0
+  function wallAlong(parent, axis, a0, a1, c0, c1, y0, y1, holes, solids) {
+    const B = (p0, p1, q0, q1, r0, r1, m, sh) => axis === "x" ? box(parent, p0, p1, q0, q1, r0, r1, m, sh) : box(parent, r0, r1, q0, q1, p0, p1, m, sh);
+    const S = (p0, p1) => { if (solids && p1 - p0 > 0.01) solids.push(axis === "x" ? { x0: p0, x1: p1, z0: c0, z1: c1 } : { x0: c0, x1: c1, z0: p0, z1: p1 }); };
+    const f = 0.05, cm = (c0 + c1) / 2;
+    let cur = a0;
+    holes.slice().sort((p, q) => p.a - q.a).forEach((h) => {
+      const lo = y0 + h.lo, hi = y0 + h.hi;
+      B(cur, h.a, y0, y1, c0, c1, "plaster"); S(cur, h.a);
+      B(h.a, h.b, hi, y1, c0, c1, "plaster");
+      B(h.a, h.b, hi - f, hi, c0 - 0.01, c1 + 0.01, frame);
+      B(h.a, h.a + f, lo, hi, c0 - 0.01, c1 + 0.01, frame);
+      B(h.b - f, h.b, lo, hi, c0 - 0.01, c1 + 0.01, frame);
+      if (h.type === "win") {
+        B(h.a, h.b, y0, lo, c0, c1, "plaster"); S(h.a, h.b);
+        B(h.a, h.b, lo, lo + f, c0 - 0.01, c1 + 0.01, frame);
+        B((h.a + h.b) / 2 - f / 2, (h.a + h.b) / 2 + f / 2, lo, hi, cm - 0.03, cm + 0.03, frame);
+        B(h.a + f, h.b - f, lo + f, hi - f, cm - 0.01, cm + 0.01, glass, false);
+      } else if (h.type === "door") {
+        B(h.a + f, h.b - f, lo, hi - f, cm - 0.025, cm + 0.025, "wood"); S(h.a, h.b);
+      }
+      cur = h.b;
+    });
+    B(cur, a1, y0, y1, c0, c1, "plaster"); S(cur, a1);
+  }
+
+  // sliding street gate: frame and vertical bars, along x at z
+  function gate(parent, x0, x1, z, y) {
+    const h = 2.0, t = 0.04;
+    box(parent, x0, x1, y + h - t, y + h, z - t, z + t, metal);
+    box(parent, x0, x1, y + 0.08, y + 0.08 + t, z - t, z + t, metal);
+    for (let x = x0 + 0.06; x < x1 - 0.03; x += 0.14) box(parent, x, x + 0.025, y + 0.08, y + h, z - 0.015, z + 0.015, metal);
+  }
+
+  function label(text, color) {
+    const c = document.createElement("canvas");
+    const ctx = c.getContext("2d");
+    const fs = 44;
+    ctx.font = `600 ${fs}px Inter, system-ui, sans-serif`;
+    c.width = Math.ceil(ctx.measureText(text).width + 36); c.height = fs + 24;
+    ctx.font = `600 ${fs}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = "rgba(255,255,255,0.93)";
+    const r = 14;
+    ctx.beginPath();
+    ctx.moveTo(r, 0); ctx.arcTo(c.width, 0, c.width, c.height, r); ctx.arcTo(c.width, c.height, 0, c.height, r);
+    ctx.arcTo(0, c.height, 0, 0, r); ctx.arcTo(0, 0, c.width, 0, r); ctx.fill();
+    ctx.fillStyle = color || "#1d2420";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, 18, c.height / 2 + 2);
+    const tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.LinearFilter;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+    s.scale.set(0.42 * c.width / c.height, 0.42, 1);
+    s.renderOrder = 10;
+    return s;
+  }
+  function dimLine(a, b, color) {
+    const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, b]), new THREE.LineBasicMaterial({ color, depthTest: false }));
+    l.renderOrder = 9;
+    return l;
+  }
+  const V = (x, y, z) => new THREE.Vector3(ox + x, y, z);
+  function dim(x0, y0, z0, x1, y1, z1, text, color) {
+    dims.add(dimLine(V(x0, y0, z0), V(x1, y1, z1), color));
+    const s = label(text, "#" + color.toString(16).padStart(6, "0"));
+    s.position.copy(V((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2));
+    dims.add(s);
+  }
+
+  function person(x, y, z, color) {
+    const m = new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.2, 0.85, 16), m); body.position.y = 1.0;
+    const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.13, 0.6, 16), m); legs.position.y = 0.3;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.115, 16, 12), m); head.position.y = 1.75 - 0.115;
+    [body, legs, head].forEach((o) => { o.castShadow = true; g.add(o); });
+    g.position.set(ox + x, y, z);
+    root.add(g);
+    return g;
+  }
+
+  function disposeAll(obj) {
+    obj.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+      ms.forEach((m) => { if (shared.has(m)) return; if (m.map) m.map.dispose(); m.dispose(); });
+    });
+  }
+
+  // derived layout, shared by 3D and section
+  function layout() {
+    const L = P.la + P.lb, w2 = P.w / 2;
+    const yB = -P.drop, yBt = yB + P.hb;
+    const bottom = Math.min(0, yB) - SLAB;
+    // stairs between A and B, sunk into A so nobody hits the low B ceiling
+    let n = P.drop > 0.05 ? Math.max(1, Math.round(P.drop / 0.17)) : 0;
+    let pit = n ? (n - 1) * TREAD : 0;
+    if (pit > P.la * 0.5) { pit = 0; n = 0; }
+    // entrance stair from upstairs, along the back wall of A
+    const rise = P.ha + CEIL, m = Math.max(2, Math.round(rise / 0.18));
+    const s0 = 0.6, run = (m - 1) * 0.27;
+    // the entrance is the door in the front wall, so no stair from upstairs
+    const entrance = null;
+    // entrance door: front wall of A, starting 4 m from the left end
+    const door = DOOR_X + DOOR_W < P.la - 0.1 ? { a: DOOR_X, b: DOOR_X + DOOR_W, h: Math.min(DOOR_H, P.ha - 0.1) } : null;
+    return { L, w2, yB, yBt, bottom, n, pit, rise: n ? P.drop / n : 0, entrance, door };
+  }
+
+  function build() {
+    scene.remove(root);
+    disposeAll(root);
+    root = new THREE.Group(); walls = new THREE.Group(); ceiling = new THREE.Group(); dims = new THREE.Group();
+    f1 = new THREE.Group(); f1ceil = new THREE.Group(); f1dims = new THREE.Group(); f1base = new THREE.Group(); fillB = new THREE.Group();
+    root.add(walls, ceiling, dims, f1, f1ceil, f1dims, f1base, fillB);
+    scene.add(root);
+
+    const G = layout();
+    const { L, w2, yB, yBt, bottom } = G;
+    ox = -L / 2;
+    const zS = STAIR_W / 2, z0s = STAIR_Z - zS, z1s = STAIR_Z + zS;
+
+    // ----- floors -----
+    const fA = { top: "tile", side: "concrete" }, fB = { top: "concrete", side: "concrete" };
+    if (G.n) {
+      const px = P.la - G.pit;
+      box(walls, 0, px, bottom, 0, -w2, w2, fA);
+      box(walls, px, P.la, bottom, 0, -w2, z0s, fA);
+      box(walls, px, P.la, bottom, 0, z1s, w2, fA);
+      for (let i = 1; i < G.n; i++) {
+        box(walls, px + (i - 1) * TREAD, px + i * TREAD, bottom, -i * G.rise, z0s, z1s, { top: "wood", side: "concrete" });
+      }
+    } else {
+      box(walls, 0, P.la, bottom, 0, -w2, w2, fA);
+    }
+    box(walls, P.la, L, bottom, yB, -w2, w2, fB);
+
+    // ----- outer walls -----
+    const yTopA = P.ha, holes = [];
+    const door = G.door;
+    if (door) holes.push({ a: door.a, b: door.b, lo: 0, hi: door.h, door: true });
+    if (P.ha > 1.3) {
+      const lo = P.ha - 0.75, hi = P.ha - 0.2;
+      [0.3, 0.7].forEach((f) => {
+        const c = P.la * f, a = c - 0.6, b = c + 0.6;
+        if (a > 0.2 && b < P.la - 0.2 && !(door && a < door.b + 0.3 && b > door.a - 0.3)) holes.push({ a, b, lo, hi });
+      });
+    }
+    holes.sort((p, q) => p.a - q.a);
+    wallX(-T, P.la, bottom, yTopA, w2, w2 + T, holes);              // front of A, with windows
+    box(walls, -T, P.la, bottom, yTopA, -w2 - T, -w2, "plaster");   // back of A
+    box(walls, -T, 0, bottom, yTopA, -w2, w2, "plaster");           // left end
+    box(walls, P.la, L + T, bottom, yBt, w2, w2 + T, "plaster");    // front of B
+    box(walls, P.la, L + T, bottom, yBt, -w2 - T, -w2, "plaster");  // back of B
+    box(walls, L, L + T, bottom, yBt, -w2, w2, "plaster");          // right end
+    // header wall where the ceiling steps down
+    if (yBt < P.ha) box(walls, P.la, P.la + T, yBt, P.ha, -w2, w2, "plaster");
+    else if (yBt > P.ha) box(walls, P.la - T, P.la, P.ha, yBt, -w2, w2, "plaster");
+    // ground around the basement
+    const soilTop = Math.max(P.ha, yBt) + CEIL;
+    box(walls, -T - 0.6, L + T + 0.6, bottom - 0.25, bottom, -w2 - T - 0.6, w2 + T + 0.6, "soil");
+
+    // ----- entrance stair from upstairs -----
+    const E = G.entrance;
+    if (E) {
+      const z0 = -w2, z1 = -w2 + E.width;
+      for (let i = 1; i < E.m; i++) {
+        box(walls, E.s0 + (i - 1) * 0.27, E.s0 + i * 0.27, 0, i * E.r, z0, z1, { top: "wood", side: "plaster" });
+      }
+      // sloped handrail on the open side
+      const a = V(E.s0, 0.95, z1 - 0.03), b = V(E.s1, (E.m - 1) * E.r + 0.95, z1 - 0.03);
+      const len = a.distanceTo(b);
+      const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, len, 8), metal);
+      rail.position.copy(a.clone().add(b).multiplyScalar(0.5));
+      rail.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+      rail.castShadow = true;
+      walls.add(rail);
+      [0, 0.5, 1].forEach((f) => {
+        const x = E.s0 + (E.s1 - E.s0) * f, y = Math.round(f * (E.m - 1)) * E.r;
+        box(walls, x - 0.02, x + 0.02, y, y + 0.95, z1 - 0.05, z1 - 0.01, metal);
+      });
+    }
+
+    // ----- ceilings (toggle) -----
+    const cA = { top: "concrete", side: "plaster" };
+    if (E) {
+      const hx0 = E.s0 + (E.s1 - E.s0) * 0.35, hx1 = E.s1 + 0.27, hz = -w2 + E.width;
+      box(ceiling, 0, P.la, P.ha, P.ha + CEIL, hz, w2, cA);
+      box(ceiling, 0, hx0, P.ha, P.ha + CEIL, -w2, hz, cA);
+      box(ceiling, hx1, P.la, P.ha, P.ha + CEIL, -w2, hz, cA);
+    } else box(ceiling, 0, P.la, P.ha, P.ha + CEIL, -w2, w2, cA);
+    box(ceiling, yBt < P.ha ? P.la + T : P.la, L, yBt, yBt + CEIL, -w2, w2, cA);
+
+    // ----- lights: fixtures on the ceiling, real light inside -----
+    const fixture = (x, y, z) => {
+      const d = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.04, 24), lamp);
+      d.position.set(ox + x, y - 0.02, z);
+      ceiling.add(d);
+    };
+    const rowsA = [P.la * 0.25, P.la * 0.62], colsA = [-w2 / 2, w2 / 2];
+    rowsA.forEach((x) => colsA.forEach((z) => fixture(x, P.ha, z)));
+    [-w2 / 2, w2 / 2].forEach((z) => fixture(P.la + P.lb / 2, yBt, z));
+    [[P.la * 0.3, P.ha - 0.3, 0], [P.la * 0.75, P.ha - 0.3, 0], [P.la + P.lb / 2, yBt - 0.25, 0]].forEach(([x, y, z]) => {
+      const pl = new THREE.PointLight(0xffe9c4, 0.45, 9, 1.6);
+      pl.position.set(ox + x, y, z);
+      root.add(pl);
+    });
+
+    // ----- columns -----
+    columns().forEach((c) => {
+      const top = c.x - COL / 2 >= P.la ? yBt : P.ha;
+      box(walls, c.x - COL / 2, c.x + COL / 2, bottom, top, c.z - COL / 2, c.z + COL / 2, "concrete");
+    });
+    if (columns().length > 1) {
+      const [a, b2] = columns();
+      dim(a.x, 0.05, a.z - 0.6, b2.x, 0.05, b2.z - 0.6, fmt(b2.x - a.x) + " м", 0x6b4a2b);
+    }
+
+    // ----- people for scale -----
+
+    // ----- dimensions -----
+    const front = w2 + T + 0.7, yl = 0.05;
+    dim(0, yl, front, P.la, yl, front, fmt(P.la) + " м", 0x8a5523);
+    if (G.door) dim(0, yl, w2 + T + 0.3, G.door.a, yl, w2 + T + 0.3, "дар: " + fmt(G.door.a) + " м", 0x6b4a2b);
+    dim(P.la, yl, front, L, yl, front, fmt(P.lb) + " м", 0x2f5d86);
+    const yt = soilTop + 0.5;
+    dim(0, yt, -w2 - T, L, yt, -w2 - T, "ҳамагӣ " + fmt(L) + " м", 0x1d2420);
+    dim(-T - 0.7, yl, -w2, -T - 0.7, yl, w2, fmt(P.w) + " м", 0x1d2420);
+    dim(0.3, 0, -w2 + 0.3 + (E ? E.width : 0), 0.3, P.ha, -w2 + 0.3 + (E ? E.width : 0), "h " + fmt(P.ha) + " м", 0x8a5523);
+    dim(L - 0.3, yB, -w2 + 0.3, L - 0.3, yBt, -w2 + 0.3, "h " + fmt(P.hb) + " м", 0x2f5d86);
+    if (P.drop) dim(P.la + 0.15, 0, w2 - 0.3, P.la + 0.15, yB, w2 - 0.3, "−" + fmt(P.drop * 100, 0) + " см", 0xb0352b);
+    if (yBt < P.ha) dim(P.la + T + 0.1, yBt, w2 - 0.6, P.la + T + 0.1, P.ha, w2 - 0.6, "−" + fmt((P.ha - yBt) * 100, 0) + " см", 0xb0352b);
+
+    buildF1(G);
+    applyVis();
+    drawSection(G);
+    calc(G);
+  }
+
+  // ---------- floor 1, garden, driveways (from the PDF plan) ----------
+  // plan coords: x = 0 on axis 2 (left face of the house), z = 0 on axis Б,
+  // z = −4 axis A (street side), z = +4 axis В (porch side)
+  function buildF1(G) {
+    G0 = Math.max(P.ha, G.yBt) + CEIL;
+    F1 = G0 + 0.05;
+    solids1 = [];
+    const y0 = F1, yT = F1 + H1;
+    const site = (x0, x1, z0, z1, kind) => box(f1, x0, x1, G0 - 0.3, G0 + 0.02, z0, z1, { top: kind, side: "concrete" });
+
+    // ground: street, garden, driveways, porch, back yard
+    site(-4.5, 13, -7.5, -6, "asphalt");
+    site(0, 9, -6, -4, "grass");
+    site(-4.5, 0, -6, 6, "paving");
+    site(9, 13, -6, 6, "paving");
+    site(0, 9, 4, 6, "paving");
+    site(-4.5, 13, 6, 10, "grass");
+    box(f1, 0, 9, G0 - 0.3, F1, -4, 4, { top: "tile", side: "concrete" });   // house floor
+    // solid ground under everything when the basement is hidden
+    box(f1base, -4.5, 13, G0 - 1.2, G0 - 0.3, -7.5, 10, "soil");
+    // earth over the low basement part, under the right driveway
+    box(fillB, 9.3, 13.3, G.yBt + CEIL, G0 - 0.3, -4.3, 4.3, "soil");
+
+    // gates on the street line, garden stays open
+    gate(f1, -4.5, 0, -6, G0);
+    gate(f1, 9, 13, -6, G0);
+
+    // outer walls 40 cm, inside the 9 × 8 outline
+    const win = (a, b, lo = 0.9, hi = 2.3) => ({ a, b, lo, hi, type: "win" });
+    wallAlong(f1, "x", 0, 9, -4, -4 + W1, y0, yT, [win(0.8, 2.3), win(5.5, 7.6)], solids1);                     // street side
+    wallAlong(f1, "x", 0, 9, 4 - W1, 4, y0, yT, [{ a: 3.3, b: 4.3, lo: 0, hi: 2.2, type: "door" }, win(6.1, 7.7, 1.2, 2.5)], solids1); // porch side
+    wallAlong(f1, "z", -4 + W1, 4 - W1, 0, W1, y0, yT, [{ a: -3.4, b: -2.5, lo: 0, hi: 2.1, type: "door" }, win(-2.3, -1.0), win(1.1, 3.0)], solids1); // left
+    wallAlong(f1, "z", -4 + W1, 4 - W1, 9 - W1, 9, y0, yT, [win(-3.0, -1.8), win(0.3, 1.2, 1.1, 2.3)], solids1);   // right
+
+    // inner walls 20 cm
+    const open = (a, b) => ({ a, b, lo: 0, hi: 2.1, type: "open" });
+    wallAlong(f1, "z", -4 + W1, 4 - W1, 3 - WI / 2, 3 + WI / 2, y0, yT, [open(-0.75, 0.15)], solids1);            // room 1 | hall
+    wallAlong(f1, "x", 3 + WI / 2, 9 - W1, -1 - WI / 2, -1 + WI / 2, y0, yT, [open(3.5, 4.4)], solids1);          // room 2 | hall, kitchen
+    wallAlong(f1, "z", -1 + WI / 2, 1.5 - WI / 2, 5 - WI / 2, 5 + WI / 2, y0, yT, [open(0.4, 1.2)], solids1);     // hall | kitchen
+    wallAlong(f1, "x", 5 + WI / 2, 9 - W1, 1.5 - WI / 2, 1.5 + WI / 2, y0, yT, [], solids1);                      // kitchen | stair
+
+    // kitchen counter along the right wall
+    box(f1, 8.0, 9 - W1, y0, y0 + 0.9, -1 + WI / 2, 1.5 - WI / 2, { top: "wood", side: "plaster" });
+    solids1.push({ x0: 8.0, x1: 9 - W1, z0: -1, z1: 1.5 });
+
+    // U-stair to floor 2: 20 risers, two flights of 10, landing at the right
+    const r = H1F / 20, tr = 0.26, sx0 = 5.25, sx1 = sx0 + 10 * tr;
+    const sz0 = 1.5 + WI / 2, sz1 = 4 - W1, mid0 = sz0 + 0.9, mid1 = mid0 + 0.2;
+    for (let i = 1; i <= 10; i++) box(f1, sx0 + (i - 1) * tr, sx0 + i * tr, y0, y0 + i * r, sz0, mid0, { top: "wood", side: "plaster" });
+    box(f1, sx1, 9 - W1, y0, y0 + 10 * r, sz0, sz1, { top: "wood", side: "plaster" });
+    for (let j = 1; j <= 10; j++) box(f1, sx1 - j * tr, sx1 - (j - 1) * tr, y0, y0 + (10 + j) * r, mid1, sz1, { top: "wood", side: "plaster" });
+    box(f1, sx0, sx1, y0, y0 + 10 * r + 0.95, mid0, mid1, "plaster");
+    solids1.push({ x0: 5.1, x1: 9, z0: sz0, z1: sz1 });
+
+    // concrete frame: columns 40 × 40 on the grid, flush with the outer faces
+    const colAt = (x0, x1, z0, z1, h) => box(f1, x0 - 0.01, x1 + 0.01, y0, y0 + h, z0 - 0.01, z1 + 0.01, "concrete");
+    const gx = [[0, 0.4], [4.3, 4.7], [8.6, 9]], gz = [[-4, -3.6], [-0.2, 0.2], [3.6, 4]];
+    // no free-standing column in the middle of the house (grid point 3Б is left out)
+    gx.forEach(([a, b]) => gz.forEach(([c, d]) => { if (a === 4.3 && c === -0.2) return; colAt(a, b, c, d, H1); }));
+    // edge columns of the driveways carry floors 2–3
+    [[-4.5, -4.1], [12.6, 13]].forEach(([a, b]) => gz.forEach(([c, d]) => colAt(a, b, c, d, H1F)));
+
+    // ceiling of floor 1 (toggle), with the stair opening
+    const cc = { top: "concrete", side: "plaster" };
+    box(f1ceil, 0, 9, yT, yT + 0.3, -4, sz0, cc);
+    box(f1ceil, 0, 5.1, yT, yT + 0.3, sz0, 4, cc);
+    box(f1ceil, 5.1, 9, yT, yT + 0.3, sz1, 4, cc);
+    [[1.5, -2], [1.5, 2], [6, -2.5], [6.8, 0.25], [4, 2.5]].forEach(([x, z]) => {
+      const d = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.04, 24), lamp);
+      d.position.set(ox + x, yT - 0.02, z);
+      f1ceil.add(d);
+    });
+    [[1.5, 0], [6, -1.5], [5, 2.5]].forEach(([x, z]) => {
+      const pl = new THREE.PointLight(0xffe9c4, 0.35, 8, 1.6);
+      pl.position.set(ox + x, yT - 0.4, z);
+      f1.add(pl);
+    });
+
+    // names and sizes
+    const tag = (x, z, text, color = 0x1d2420, y = F1 + 0.15) => {
+      const sp = label(text, "#" + color.toString(16).padStart(6, "0"));
+      sp.position.set(ox + x, y, z);
+      f1dims.add(sp);
+    };
+    tag(1.5, 0, "Ҳуҷраи 1 · 18 м²");
+    tag(6, -2.5, "Ҳуҷраи 2 · 13,8 м²");
+    tag(6.5, 0.25, "Ошхона · 8,1 м²");
+    tag(4, 2.2, "Даҳлез · 8,5 м²");
+    tag(7, 2.6, "Зина", 0x1d2420, F1 + 2.2);
+    tag(4.5, 5, "Айвон", 0x6b4a2b, G0 + 0.1);
+    tag(4.5, -5, "Боғча · 2 м", 0x3f5a2a, G0 + 0.1);
+    tag(-2.25, 1, "Гузаргоҳи мошин · 4,5 м", 0x1d2420, G0 + 0.1);
+    tag(11, 1, "Гузаргоҳи мошин · 4,0 м", 0x1d2420, G0 + 0.1);
+    tag(4.25, -6.75, "Кӯча", 0xffffff, G0 + 0.1);
+    tag(4.25, 8, "Ҳавлии қафо", 0x3f5a2a, G0 + 0.1);
+    const dd = (x0, z0, x1, z1, t, y = G0 + 0.08) => {
+      f1dims.add(dimLine(V(x0, y, z0), V(x1, y, z1), 0x8a5523));
+      const sp = label(t, "#8a5523"); sp.position.copy(V((x0 + x1) / 2, y, (z0 + z1) / 2)); f1dims.add(sp);
+    };
+    dd(-4.5, -6.6, 13, -6.6, "17,5 м", G0 + 0.12);
+    dd(0, 6.6, 9, 6.6, "хона 9 м");
+    dd(9.6, -4, 9.6, 4, "8 м");
+  }
+
+  // ---------- view state ----------
+  const state = { ceiling: false, dims: true, view: "3d", level: "all" };
+  function applyVis() {
+    const L = state.level;
+    walls.visible = L !== "1";
+    dims.visible = state.dims && L === "b";
+    ceiling.visible = L === "all" ? true : L === "b" && state.ceiling;
+    f1.visible = L !== "b";
+    f1dims.visible = state.dims && L !== "b";
+    f1ceil.visible = L !== "b" && state.ceiling;
+    f1base.visible = L === "1";
+    fillB.visible = L === "all";
+  }
+  function setPressed() {
+    ["all", "1", "b"].forEach((k) => document.getElementById("lv-" + k).setAttribute("aria-pressed", String(state.level === k)));
+    ["3d", "in", "top", "side"].forEach((k) => document.getElementById("v-" + k).setAttribute("aria-pressed", String(state.view === k)));
+    document.getElementById("t-ceil").setAttribute("aria-pressed", String(state.ceiling));
+    document.getElementById("t-dim").setAttribute("aria-pressed", String(state.dims));
+  }
+  let personA = null;
+
+  // ---------- walk-through (first person) ----------
+  // position in plan coordinates; the eye follows the floor and ducks under the low part
+  const fp = { x: 4.45, z: 0, yaw: 0.9, pitch: -0.08, tYaw: 0.9, tPitch: -0.08, eye: 1.6, move: { f: 0, s: 0 }, keys: {} };
+  const EYE = 1.6, PAD = 0.5, SPEED = 1.4;
+  const walk1 = () => state.level !== "b";
+  function pushOut(rects, r) {
+    rects.forEach((q) => {
+      const x0 = q.x0 - r, x1 = q.x1 + r, z0 = q.z0 - r, z1 = q.z1 + r;
+      if (fp.x > x0 && fp.x < x1 && fp.z > z0 && fp.z < z1) {
+        const m = [fp.x - x0, x1 - fp.x, fp.z - z0, z1 - fp.z], k = m.indexOf(Math.min(...m));
+        if (k === 0) fp.x = x0; else if (k === 1) fp.x = x1; else if (k === 2) fp.z = z0; else fp.z = z1;
+      }
+    });
+  }
+  function floorAt(x, z) {
+    if (walk1()) return F1;
+    const G = layout();
+    if (x >= P.la) return G.yB;
+    if (G.n && x >= P.la - G.pit && Math.abs(z - STAIR_Z) < STAIR_W / 2) {
+      const i = Math.floor((x - (P.la - G.pit)) / TREAD) + 1;
+      return -Math.min(i, G.n - 1) * G.rise;
+    }
+    return 0;
+  }
+  function ceilAt(x) {
+    if (walk1()) return F1 + H1;
+    const G = layout();
+    let c = Infinity;
+    for (let dx = -0.45; dx <= 0.45; dx += 0.15) c = Math.min(c, x + dx >= P.la ? G.yBt : P.ha);
+    return c;
+  }
+  function clampFp() {
+    if (walk1()) {
+      const r = 0.25;
+      fp.x = Math.min(9 - W1 - r, Math.max(W1 + r, fp.x));
+      fp.z = Math.min(4 - W1 - r, Math.max(-4 + W1 + r, fp.z));
+      pushOut(solids1, r);
+      return;
+    }
+    const L = P.la + P.lb, w2 = P.w / 2;
+    fp.x = Math.min(L - PAD, Math.max(PAD, fp.x));
+    fp.z = Math.min(w2 - PAD, Math.max(-w2 + PAD, fp.z));
+    // keep out of the columns
+    columns().forEach((c) => {
+      const r = COL / 2 + 0.3, dx = fp.x - c.x, dz = fp.z - c.z;
+      if (Math.abs(dx) < r && Math.abs(dz) < r) {
+        if (r - Math.abs(dx) < r - Math.abs(dz)) fp.x = c.x + Math.sign(dx || 1) * r;
+        else fp.z = c.z + Math.sign(dz || 1) * r;
+      }
+    });
+  }
+  function targetEye() { return Math.min(floorAt(fp.x, fp.z) + EYE, ceilAt(fp.x) - 0.18); }
+  function placeFp(snap) {
+    const e = targetEye();
+    fp.eye = snap ? e : fp.eye + (e - fp.eye) * 0.12;
+    camera.position.set(ox + fp.x, fp.eye, fp.z);
+    const cp = Math.cos(fp.pitch);
+    camera.lookAt(ox + fp.x + Math.sin(fp.yaw) * cp, fp.eye + Math.sin(fp.pitch), fp.z - Math.cos(fp.yaw) * cp);
+  }
+  function enterInside() {
+    controls.enabled = false;
+    camera.fov = 70; camera.updateProjectionMatrix();
+    if (walk1()) {
+      // just inside the main door, looking down the hall toward the street side
+      fp.x = 4.0; fp.z = 3.0; fp.yaw = fp.tYaw = 0.25; fp.pitch = fp.tPitch = -0.05;
+    } else {
+      const w2 = P.w / 2, door = layout().door;
+      fp.x = door ? (door.a + door.b) / 2 : 1.2; fp.z = w2 - 0.9;
+      fp.yaw = fp.tYaw = 0.75; fp.pitch = fp.tPitch = -0.06;
+    }
+    clampFp(); placeFp(true);
+    document.getElementById("walk").hidden = false;
+    document.getElementById("hint").textContent = "Нигоҳ кардан: кашидан · Рафтан: тугмаҳо ё W A S D";
+    if (personA) personA.visible = false;
+  }
+  function exitInside() {
+    controls.enabled = true;
+    camera.fov = 42; camera.updateProjectionMatrix();
+    document.getElementById("walk").hidden = true;
+    document.getElementById("hint").textContent = "Гардонидан: кашидан · Калон/хурд: ду ангушт ё чархак · Ҳаракат: ду ангушт ё тугмаи рост";
+    if (personA) personA.visible = true;
+  }
+  // drag to look around
+  let drag = null;
+  renderer.domElement.addEventListener("pointerdown", (e) => {
+    if (state.view !== "in") return;
+    drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    renderer.domElement.setPointerCapture(e.pointerId);
+  });
+  renderer.domElement.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    // drag left = turn left, drag up = look up
+    fp.tYaw += (e.clientX - drag.x) * 0.005;
+    fp.tPitch = Math.max(-1.1, Math.min(1.1, fp.tPitch - (e.clientY - drag.y) * 0.004));
+    drag.x = e.clientX; drag.y = e.clientY;
+  });
+  ["pointerup", "pointercancel"].forEach((t) => renderer.domElement.addEventListener(t, () => (drag = null)));
+  // hold-to-walk buttons
+  document.querySelectorAll("#walk button").forEach((b) => {
+    const [f, sd] = b.dataset.m.split(",").map(Number);
+    const on = (e) => { e.preventDefault(); fp.move.f = f; fp.move.s = sd; b.setAttribute("aria-pressed", "true"); };
+    const off = () => { fp.move.f = 0; fp.move.s = 0; b.setAttribute("aria-pressed", "false"); };
+    b.addEventListener("pointerdown", on);
+    ["pointerup", "pointerleave", "pointercancel"].forEach((t) => b.addEventListener(t, off));
+    b.addEventListener("contextmenu", (e) => e.preventDefault());
+  });
+  const KEYS = { KeyW: [1, 0], ArrowUp: [1, 0], KeyS: [-1, 0], ArrowDown: [-1, 0], KeyA: [0, -1], ArrowLeft: [0, -1], KeyD: [0, 1], ArrowRight: [0, 1] };
+  window.addEventListener("keydown", (e) => { if (state.view === "in" && KEYS[e.code] && !/INPUT/.test(document.activeElement.tagName)) { fp.keys[e.code] = 1; e.preventDefault(); } });
+  window.addEventListener("keyup", (e) => { delete fp.keys[e.code]; });
+  let last = performance.now();
+  function stepFp(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (state.view !== "in") return;
+    let f = fp.move.f, sd = fp.move.s;
+    Object.keys(fp.keys).forEach((k) => { f += KEYS[k][0]; sd += KEYS[k][1]; });
+    f = Math.max(-1, Math.min(1, f)); sd = Math.max(-1, Math.min(1, sd));
+    const sy = Math.sin(fp.yaw), cy = Math.cos(fp.yaw), d = SPEED * dt;
+    fp.x += (sy * f + cy * sd) * d;
+    fp.z += (-cy * f + sy * sd) * d;
+    clampFp();
+    fp.yaw += (fp.tYaw - fp.yaw) * 0.25;
+    fp.pitch += (fp.tPitch - fp.pitch) * 0.25;
+    placeFp(false);
+  }
+
+  function view(kind) {
+    const wasIn = state.view === "in";
+    state.view = kind;
+    const L = P.la + P.lb, d = Math.max(L, P.w);
+    if (kind === "in") {
+      state.ceiling = true; state.dims = false;
+      enterInside();
+    } else {
+      if (wasIn) exitInside();
+      state.ceiling = false;
+      const siteView = state.level !== "b";
+      const cx = siteView ? ox + 4.25 : 0, cy = siteView ? G0 : 0.4, cz = siteView ? 1.25 : 0, dd = siteView ? 17 : d;
+      controls.target.set(cx, cy, cz);
+      if (kind === "top") camera.position.set(cx, cy + dd * 1.9, cz + 0.01);
+      else if (kind === "side") camera.position.set(cx, cy + 0.8, cz + dd * 1.6);
+      else camera.position.set(cx + dd * 0.7, cy + dd * 0.85, cz + dd * 1.05);
+      controls.update();
+    }
+    applyVis();
+    setPressed();
+  }
+  document.getElementById("v-3d").onclick = () => view("3d");
+  document.getElementById("v-in").onclick = () => view("in");
+  document.getElementById("v-top").onclick = () => view("top");
+  document.getElementById("v-side").onclick = () => view("side");
+  document.getElementById("t-ceil").onclick = () => { state.ceiling = !state.ceiling; applyVis(); setPressed(); };
+  ["all", "1", "b"].forEach((k) => (document.getElementById("lv-" + k).onclick = () => {
+    state.level = k;
+    view(state.view === "in" ? "in" : state.view);
+  }));
+  // ---------- full screen ----------
+  const fullBtn = document.getElementById("t-full");
+  const realFull = () => document.fullscreenElement || document.webkitFullscreenElement;
+  function setFullUi(on) {
+    fullBtn.setAttribute("aria-pressed", String(on));
+    fullBtn.textContent = on ? "✕ Баромадан" : "⛶ Пурра";
+  }
+  function enterFull() {
+    const req = stage.requestFullscreen || stage.webkitRequestFullscreen;
+    const fallback = () => { stage.classList.add("full"); document.body.classList.add("no-scroll"); setFullUi(true); };
+    if (!req) return fallback();
+    try {
+      const r = req.call(stage);
+      if (r && r.then) r.then(() => {
+        setFullUi(true);
+        try { screen.orientation && screen.orientation.lock && screen.orientation.lock("landscape").catch(() => {}); } catch (e) {}
+      }, fallback);
+      else setFullUi(true);
+    } catch (e) { fallback(); }
+  }
+  function exitFull() {
+    if (realFull()) {
+      try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) {}
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    }
+    stage.classList.remove("full"); document.body.classList.remove("no-scroll");
+    setFullUi(false);
+  }
+  fullBtn.onclick = () => (fullBtn.getAttribute("aria-pressed") === "true" ? exitFull() : enterFull());
+  ["fullscreenchange", "webkitfullscreenchange"].forEach((t) => document.addEventListener(t, () => {
+    if (!realFull() && !stage.classList.contains("full")) setFullUi(false);
+    resize();
+  }));
+  window.addEventListener("keydown", (e) => { if (e.key === "Escape" && stage.classList.contains("full")) exitFull(); });
+  window.addEventListener("orientationchange", () => setTimeout(resize, 250));
+  document.getElementById("t-dim").onclick = () => { state.dims = !state.dims; applyVis(); setPressed(); };
+
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    renderer.setSize(r.width, r.height, false);
+    camera.aspect = r.width / r.height;
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage);
+  function setBg() { renderer.setClearColor(new THREE.Color(css("--stage") || "#dfe4de")); }
+  setBg();
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", setBg);
+  new MutationObserver(setBg).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  (function loop(now) { requestAnimationFrame(loop); if (state.view === "in") stepFp(now || performance.now()); else controls.update(); renderer.render(scene, camera); })();
+
+  // ---------- section drawing ----------
+  function drawSection(G) {
+    const { L, yB, yBt, bottom } = G;
+    const k = 56, padL = 70, padR = 30, padT = 30, padB = 50;
+    const top = Math.max(P.ha, yBt) + CEIL, bot = bottom;
+    const W = padL + (L + 2 * T) * k + padR, H = padT + (top - bot) * k + padB;
+    const X = (x) => padL + (x + T) * k, Y = (y) => padT + (top - y) * k;
+    const t = (x, y, s, fill, anchor = "middle", size = 13) =>
+      `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${size}" font-family="Inter, system-ui, sans-serif" fill="${fill}">${s}</text>`;
+    const rect = (x0, y0, x1, y1, fill, extra = "") => `<rect x="${X(x0)}" y="${Y(y1)}" width="${(x1 - x0) * k}" height="${(y1 - y0) * k}" fill="${fill}" ${extra}/>`;
+    const man = (x, y) => `<g fill="var(--muted)"><rect x="${X(x) - 6}" y="${Y(y + 1.52)}" width="12" height="${1.52 * k}" rx="5"/><circle cx="${X(x)}" cy="${Y(y + 1.635)}" r="${0.115 * k}"/></g>`;
+    const lv = (y, s) => `<line x1="${padL - 8}" y1="${Y(y)}" x2="${X(L + T)}" y2="${Y(y)}" stroke="var(--line)" stroke-dasharray="4 4"/>` + t(padL - 12, Y(y) + 4, s, "var(--muted)", "end", 12);
+    let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Буриши подвал">`;
+    s += lv(0, "±0,00") + lv(P.ha, "+" + fmt(P.ha));
+    if (P.drop) s += lv(yB, fmt(yB));
+    if (Math.abs(yBt - P.ha) > 0.01 && Math.abs(yBt) > 0.01) s += lv(yBt, (yBt > 0 ? "+" : "") + fmt(yBt));
+    // rooms
+    s += rect(0, 0, P.la, P.ha, "var(--zone-a)", 'fill-opacity="0.18"');
+    s += rect(P.la, yB, L, yBt, "var(--zone-b)", 'fill-opacity="0.18"');
+    // solid parts: slabs, walls, ceilings
+    const solid = "var(--muted)";
+    s += rect(-T, bot, 0, P.ha + CEIL, solid, 'fill-opacity="0.55"');
+    s += rect(L, bot, L + T, yBt + CEIL, solid, 'fill-opacity="0.55"');
+    s += rect(0, P.ha, P.la, P.ha + CEIL, solid, 'fill-opacity="0.55"');
+    s += rect(P.la, yBt, L, yBt + CEIL, solid, 'fill-opacity="0.55"');
+    if (yBt < P.ha) s += rect(P.la, yBt + CEIL, P.la + T, P.ha + CEIL, solid, 'fill-opacity="0.55"');
+    // floor A with stair pit
+    const px = P.la - G.pit;
+    s += rect(0, bot, G.n ? px : P.la, 0, solid, 'fill-opacity="0.55"');
+    let stairs = "";
+    if (G.n) {
+      let d = `M${X(px)} ${Y(0)}`;
+      for (let i = 1; i < G.n; i++) d += ` V${Y(-i * G.rise)} H${X(px + i * TREAD)}`;
+      d += ` V${Y(yB)}`;
+      stairs = `<path d="${d} V${Y(bot)} H${X(px)} Z" fill="${solid}" fill-opacity="0.55"/><path d="${d}" fill="none" stroke="var(--fg)" stroke-width="3"/>`;
+    }
+    s += stairs;
+    s += rect(P.la, bot, L, yB, solid, 'fill-opacity="0.55"');
+    s += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(G.n ? px : P.la)}" y2="${Y(0)}" stroke="var(--fg)" stroke-width="3"/>`;
+    s += `<line x1="${X(G.n ? P.la : P.la)}" y1="${Y(G.n ? yB : 0)}" x2="${X(P.la)}" y2="${Y(yB)}" stroke="var(--fg)" stroke-width="3"/>`;
+    s += `<line x1="${X(P.la)}" y1="${Y(yB)}" x2="${X(L)}" y2="${Y(yB)}" stroke="var(--fg)" stroke-width="3"/>`;
+    // entrance stair (along the back wall, drawn dashed)
+    if (G.entrance) {
+      const E = G.entrance;
+      let d = `M${X(E.s0)} ${Y(0)}`;
+      for (let i = 1; i < E.m; i++) d += ` V${Y(i * E.r)} H${X(E.s0 + i * 0.27)}`;
+      s += `<path d="${d}" fill="none" stroke="var(--muted)" stroke-dasharray="3 3"/>`;
+      s += t(X((E.s0 + E.s1) / 2), Y(E.m * E.r * 0.5) - 10, "зинапояи даромад", "var(--muted)", "middle", 12);
+    }
+    columns().forEach((c) => {
+      const top = c.x - COL / 2 >= P.la ? yBt : P.ha;
+      s += rect(c.x - COL / 2, c.x < P.la ? (c.x + COL / 2 > P.la ? yB : 0) : yB, c.x + COL / 2, top, solid, 'fill-opacity="0.8"');
+    });
+    s += t(X(P.la * 0.75), Y(P.ha / 2) + 5, "A · h " + fmt(P.ha) + " м", "var(--fg)", "middle", 15);
+    s += t(X(P.la + P.lb * 0.6) + 20, Y((yB + yBt) / 2) + 5, "B · h " + fmt(P.hb) + " м", "var(--fg)", "start", 15);
+    if (P.drop) s += t(X(P.la) + 6, Y(yB) - 8, "−" + fmt(P.drop * 100, 0) + " см", "#c0392b", "start", 12);
+    // lengths
+    const dy = H - 18;
+    s += `<line x1="${X(0)}" y1="${dy - 10}" x2="${X(L)}" y2="${dy - 10}" stroke="var(--muted)"/>`;
+    [0, P.la, L].forEach((x) => (s += `<line x1="${X(x)}" y1="${dy - 16}" x2="${X(x)}" y2="${dy - 4}" stroke="var(--muted)"/>`));
+    s += t(X(P.la / 2), dy + 6, fmt(P.la) + " м", "var(--fg)") + t(X(P.la + P.lb / 2), dy + 6, fmt(P.lb) + " м", "var(--fg)");
+    s += "</svg>";
+    document.getElementById("section").innerHTML = s;
+  }
+
+  // ---------- numbers ----------
+  function calc(G) {
+    const aA = P.la * P.w, aB = P.lb * P.w, vA = aA * P.ha, vB = aB * P.hb;
+    document.getElementById("calc").innerHTML =
+      `<tr><td>A · ${fmt(P.la)} × ${fmt(P.w)}</td><td class="n">${fmt(aA)} м²</td><td class="n">${fmt(vA)} м³</td></tr>` +
+      `<tr><td>B · ${fmt(P.lb)} × ${fmt(P.w)}</td><td class="n">${fmt(aB)} м²</td><td class="n">${fmt(vB)} м³</td></tr>` +
+      `<tr><td><b>Таҳхона</b></td><td class="n"><b>${fmt(aA + aB)} м²</b></td><td class="n"><b>${fmt(vA + vB)} м³</b></td></tr>` +
+      `<tr><td>Ошёнаи 1 · 9 × 8 (бо девор)</td><td class="n">72 м²</td><td class="n">${fmt(72 * H1F)} м³</td></tr>` +
+      `<tr><td>Ошёнаи 1, масоҳати муфид</td><td class="n">55,3 м²</td><td class="n">—</td></tr>` +
+      `<tr><td><b>Ҳамагӣ (бо девор)</b></td><td class="n"><b>${fmt(aA + aB + 72)} м²</b></td><td class="n"></td></tr>`;
+    const items = [
+      "Ошёнаи 1: Ҳуҷраи 1 (меҳмонхона) 3 × 8 м, Ҳуҷраи 2 6 × 3 м, ошхона 4 × 2,5 м, даҳлез 8,5 м², зинаи U-шакл 2 × 3,5 м. Баландӣ 3,3 м.",
+      `Шифти B ${fmt((P.ha - G.yBt) * 100, 0)} см пасттар аз шифти A аст.`,
+      `Деворҳо (периметр, дарунӣ): ${fmt(2 * (P.la + P.lb) + 2 * P.w)} м. Ғафсии девор дар модел: ${fmt(T * 100, 0)} см.`,
+    ];
+    if (G.n) items.push(`Зинапояи байни A ва B: ${G.n} зина × ${fmt(G.rise * 100, 0)} см, паҳнӣ ${fmt(STAIR_W)} м. Дар қисми A кофта шудааст, то сар ба шифти паст нахӯрад. Дар паҳлӯи сутун ҷойгир аст.`);
+    columns().forEach((c, i) => items.push(`Сутуни ${i + 1}: ${fmt(COL * 100, 0)} × ${fmt(COL * 100, 0)} см, ${fmt(c.x)} м аз девори чап, дар миёнаи паҳнӣ (${fmt(P.w / 2)} м).`));
+    if (G.door) items.push(`Дари даромад: дар девори пеши A, ${fmt(DOOR_X)} м аз кунҷи чап, паҳнӣ ${fmt(DOOR_W * 100, 0)} см, баландӣ ${fmt(G.door.h * 100, 0)} см.`);
+    items.push("Тирезаҳо ва чароғҳо намуна мебошанд. Ҷояшонро гӯед, дуруст мекунам.");
+    document.getElementById("calc-note").innerHTML = items.map((x) => `<li>${x}</li>`).join("");
+  }
+
+  // ---------- inputs ----------
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", () => {
+      const v = parseFloat(String(el.value).replace(",", "."));
+      if (!isFinite(v)) return;
+      if (id === "drop" ? v < 0 : v <= 0.5) return;
+      P[id] = v; build();
+    });
+  });
+  document.getElementById("reset").onclick = () => {
+    Object.assign(P, DEF);
+    ids.forEach((id) => (document.getElementById(id).value = DEF[id]));
+    build(); view("3d");
+  };
+
+  // ---------- share: #model-900-400-800-250-200-50 (centimetres) ----------
+  const shareHash = () => "model-" + SHARE_ORDER.map((k) => Math.round(P[k] * 100)).join("-");
+  function readShare() {
+    const m = /^#model-(\d+(?:-\d+){5})$/.exec(location.hash);
+    if (!m) return false;
+    const v = m[1].split("-").map((x) => parseInt(x, 10) / 100);
+    if (v.some((x, i) => !isFinite(x) || (SHARE_ORDER[i] !== "drop" && x <= 0.5))) return false;
+    SHARE_ORDER.forEach((k, i) => (P[k] = v[i]));
+    return true;
+  }
+  function applyMode() {
+    const viewer = readShare();
+    document.body.classList.toggle("viewer", viewer);
+    ["share-panel", "section-panel", "settings"].forEach((id) => (document.getElementById(id).hidden = viewer));
+    if (viewer) {
+      const L = P.la + P.lb;
+      document.getElementById("lead").textContent =
+        `Ҳамагӣ ${fmt(L)} × ${fmt(P.w)} м. Қисми калон ${fmt(P.la)} × ${fmt(P.w)} м, баландӣ ${fmt(P.ha)} м. ` +
+        `Қисми хурд ${fmt(P.lb)} × ${fmt(P.w)} м, фарш ${fmt(P.drop * 100, 0)} см пасттар, баландӣ ${fmt(P.hb)} м. ` +
+        `Ошёнаи 1: хонаи 9 × 8 м бо ду ҳуҷра, ошхона, даҳлез ва зина, айвон, боғча ва ду гузаргоҳи мошин. ` +
+        `Моделро бо ангушт ё муш гардонед, сатҳро интихоб кунед, «Аз дарун»-ро пахш кунед.`;
+      document.querySelector("h1").textContent = "Хона";
+    }
+    ids.forEach((id) => (document.getElementById(id).value = P[id]));
+  }
+  const origBuild = build;
+  build = function () {
+    origBuild();
+    document.getElementById("share-link").value = ARTIFACT_URL + "#" + shareHash();
+  };
+  document.getElementById("share-copy").onclick = () => {
+    const el = document.getElementById("share-link"), msg = document.getElementById("share-msg");
+    const done = () => (msg.textContent = "Пайванд нусха шуд. Онро ба дӯстатон фиристед.");
+    const fallback = () => { el.focus(); el.select(); msg.textContent = "Пайванд интихоб шуд. Нусха гиред (Ctrl+C ё пахш карда нигоҳ доред)."; };
+    try { navigator.clipboard.writeText(el.value).then(done, fallback); } catch (e) { fallback(); }
+  };
+  window.addEventListener("hashchange", () => { applyMode(); build(); view("3d"); });
+
+  applyMode();
+  resize();
+  build();
+  view("3d");
+})();
+</script>
