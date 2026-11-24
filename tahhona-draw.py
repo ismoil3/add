@@ -8,7 +8,7 @@ All dimensions are written in centimetres.
 import math
 import sys
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A3, landscape
+from reportlab.lib.pagesizes import A3, A4, landscape
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -17,7 +17,11 @@ pdfmetrics.registerFont(TTFont("F", "/usr/share/fonts/truetype/dejavu/DejaVuSans
 pdfmetrics.registerFont(TTFont("FB", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"))
 W, H = landscape(A3)
 RED = (0.70, 0.18, 0.12)
-c = canvas.Canvas(sys.argv[1], pagesize=(W, H))
+# layout is drawn on an A3 grid and scaled down to A4 landscape for printing
+PW, PH = landscape(A4)
+K = PW / W
+FS = 1.2   # text a bit larger so it stays readable on A4
+c = canvas.Canvas(sys.argv[1], pagesize=(PW, PH))
 c.setTitle("Таҳхона — нақша барои устоҳо")
 
 # ---------------- model values ----------------
@@ -54,6 +58,7 @@ def cm(v):
 
 
 def frame(title, sheet):
+    c.scale(K, K)
     c.setLineWidth(0.6); c.setStrokeGray(0)
     c.rect(10 * mm, 10 * mm, W - 20 * mm, H - 20 * mm)
     c.rect(W - 170 * mm, 10 * mm, 160 * mm, 18 * mm)
@@ -100,7 +105,7 @@ class View:
 
     def text(s, x, y, t, size=8, bold=False, center=True, color=None):
         X, Y = s.p(x, y)
-        c.setFont("FB" if bold else "F", size)
+        c.setFont("FB" if bold else "F", size * FS)
         if color: c.setFillColorRGB(*color)
         (c.drawCentredString if center else c.drawString)(X, Y, t)
         c.setFillGray(0)
@@ -111,7 +116,7 @@ class View:
         for X in (X1, X2):
             c.line(X - 1.2 * mm, Y - 1.2 * mm, X + 1.2 * mm, Y + 1.2 * mm)
             c.line(X, Y - 2 * mm, X, Y + 2 * mm)
-        c.setFont("F", size)
+        c.setFont("F", size * FS)
         c.drawCentredString((X1 + X2) / 2, Y + 1.2 * mm, t or cm(abs(x2 - x1)))
 
     def dimv(s, y1, y2, x, t=None, size=7.5):
@@ -121,7 +126,7 @@ class View:
             c.line(X - 1.2 * mm, Y - 1.2 * mm, X + 1.2 * mm, Y + 1.2 * mm)
             c.line(X - 2 * mm, Y, X + 2 * mm, Y)
         c.saveState(); c.translate(X - 1.2 * mm, (Y1 + Y2) / 2); c.rotate(90)
-        c.setFont("F", size); c.drawCentredString(0, 0, t or cm(abs(y2 - y1)))
+        c.setFont("F", size * FS); c.drawCentredString(0, 0, t or cm(abs(y2 - y1)))
         c.restoreState()
 
     def chainh(s, xs, y, size=7.5):
@@ -251,7 +256,7 @@ c.showPage()
 
 # =============================== 2: SECTION ===============================
 frame("буриши 1-1", 2)
-s = View(62 * mm, 120 * mm, 50)
+s = View(58 * mm, 115 * mm, 45)
 yB = -DROP
 # slabs under floors
 s.rect(-T, -SLAB, LA, 0, fill=0.55, stroke=True)
@@ -287,7 +292,7 @@ s.poly(p2, lw=0.4, dash=(2, 1.5), close=False)
 s.text(3.0, 1.2, "Ҳуҷраи 1", size=10, bold=True)
 s.text(L - LB / 2 + 0.15, 0.6, "Ҳуҷраи 2", size=10, bold=True)
 # vertical dims
-s.chainv([-SLAB, 0, HA, HA + CEIL, F1], -1.0)
+s.chainv([-SLAB, 0, HA, F1], -1.0)
 s.dimv(-SLAB, F1, -1.6)
 s.chainv([0, LAND], SH["x0"] - 0.35)
 s.chainv([YBT, HA + CEIL], LA + 0.75)
