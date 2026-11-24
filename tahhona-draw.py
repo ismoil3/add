@@ -18,8 +18,8 @@ c.setTitle("Таҳхона — нақша барои устоҳо")
 L, D = 13.0, 8.0
 TE, TI = 0.4, 0.2
 XD = 4.0
-SX0, SY0 = XD + TI / 2, TE
 SL, SW = 3.5, 2.0
+SX0, SY0 = XD + TI / 2, D - TE - SW      # corner of room 2 at back wall, next to divider
 FW, GAP = 0.9, 0.2
 NR, RISE, TREAD = 16, 275 / 16, 0.26      # 16 x 17,2 cm
 NT = 7
@@ -123,24 +123,24 @@ def axis_bubble(X, Y, t):
 
 def stair_plan(v, numbers=False):
     v.rect(SX0, SY0, SL, SW, fill=0.93, stroke=False)
-    yA, yB = SY0 + FW + GAP, SY0
+    yA, yB = SY0, SY0 + FW + GAP          # yA: start flight (room side), yB: against back wall
     x0 = SX0 + START
     for i in range(NT + 1):
         x = x0 + i * TREAD
         v.line(x, yA, x, yA + FW, lw=0.45)
         v.line(x, yB, x, yB + FW, lw=0.45)
-    v.rect(SX0, yB + FW, START + NT * TREAD, GAP, fill=0.6, stroke=False)
+    v.rect(SX0, SY0 + FW, START + NT * TREAD, GAP, fill=0.6, stroke=False)
     v.line(x0 + NT * TREAD, SY0, x0 + NT * TREAD, SY0 + SW, lw=0.6)
     ym1, ym2 = yA + FW / 2, yB + FW / 2
     xe = x0 + NT * TREAD + LAND / 2
     v.arrow([(x0 - 0.15, ym1), (xe, ym1), (xe, ym2), (x0 - 0.2, ym2)])
     if numbers:
         for i in range(NT):
-            v.text(x0 + (i + 0.5) * TREAD, ym1 + 0.2, str(i + 1), size=7)
-            v.text(x0 + (NT - 1 - i + 0.5) * TREAD, ym2 - 0.32, str(NT + 2 + i), size=7)
-        v.text(xe, ym1 + 0.2, "8", size=7)
-        v.text(x0 - 0.24, ym2 - 0.32, "16", size=7)
-    v.text(x0 + 1.0, ym1 + (0.22 if not numbers else -0.33), "боло ↑", size=9 if numbers else 7, bold=True)
+            v.text(x0 + (i + 0.5) * TREAD, ym1 - 0.32, str(i + 1), size=7)
+            v.text(x0 + (NT - 1 - i + 0.5) * TREAD, ym2 + 0.2, str(NT + 2 + i), size=7)
+        v.text(xe, ym1 - 0.32, "8", size=7)
+        v.text(x0 - 0.24, ym2 + 0.2, "16", size=7)
+    v.text(x0 + 1.0, ym1 + (-0.3 if not numbers else 0.2), "боло ↑", size=9 if numbers else 7, bold=True)
 
 
 # =============================== 1: PLAN ===============================
@@ -175,26 +175,27 @@ v.text(10.3, 5.6, "Ҳуҷраи 2", size=10, bold=True)
 v.text(XD + 0.5, (DOOR_DIV[0] + DOOR_DIV[1]) / 2 - 0.05, "Д-1", size=7.5)
 v.text((DOOR_BACK[0] + DOOR_BACK[1]) / 2, D - TE - 0.95, "Д-2", size=7.5)
 for i, (a, b) in enumerate(WIN, 1):
-    v.text((a + b) / 2, D - TE - 0.35, f"Т-{i}", size=7.5)
+    v.text((a + b) / 2, D + 0.12, f"Т-{i}", size=7)
 v.text(COLS[1][0] + 0.3, COLS[1][1] - 0.45, "сутун 40 × 40 см", size=7.5, center=False)
-v.text(SX0 + SL / 2 + 0.6, SY0 + SW + 0.2, "Зина", size=9, bold=True)
+v.text(SX0 + SL + 0.35, SY0 + 0.1, "Зина", size=9, bold=True, center=False)
+v.dimh(SX0, SX0 + SL, SY0 - 0.25, size=7)
 # dimensions (cm)
 v.dimh(0, L, -1.5)
 v.dimh(0, XD, -1.0); v.dimh(XD, L, -1.0)
-for a, b in ((0, TE), (TE, XD - TI / 2), (XD - TI / 2, SX0), (SX0, SX0 + SL), (SX0 + SL, L - TE), (L - TE, L)):
+for a, b in ((0, TE), (TE, XD - TI / 2), (XD - TI / 2, XD + TI / 2), (XD + TI / 2, L - TE), (L - TE, L)):
     v.dimh(a, b, -0.5)
 pts = [XD + TI / 2, WIN[0][0], WIN[0][1], DOOR_BACK[0], DOOR_BACK[1], WIN[1][0], WIN[1][1], L - TE]
 for a, b in zip(pts, pts[1:]): v.dimh(a, b, D + 0.5, size=7)
 v.dimh(XD, XD + 4.5, D + 1.0); v.dimh(XD + 4.5, L, D + 1.0)
 v.dimv(0, D, -1.6)
 v.dimv(0, TE, -1.0); v.dimv(TE, D - TE, -1.0); v.dimv(D - TE, D, -1.0)
-for a, b in ((0, TE), (TE, SY0 + SW), (SY0 + SW, 4.0), (4.0, D - TE), (D - TE, D)):
+for a, b in ((0, TE), (TE, 4.0), (4.0, SY0), (SY0, D - TE), (D - TE, D)):
     v.dimv(a, b, L + 1.0)
 v.dimv(0, 4.0, L + 1.5); v.dimv(4.0, D, L + 1.5)
 for a, b in ((TE, DOOR_DIV[0]), DOOR_DIV, (DOOR_DIV[1], D - TE)):
     v.dimv(a, b, XD - 0.55, size=7)
 # section mark 1-1
-ycut = SY0 + FW + GAP + FW / 2
+ycut = SY0 + FW / 2
 for xx, side in ((-0.6, 1), (L + 0.6, -1)):
     X, Y = v.p(xx, ycut)
     c.setLineWidth(1.4); c.line(X, Y, X + side * 5 * mm, Y)
@@ -252,8 +253,8 @@ c.showPage()
 # =============================== 3: STAIR ===============================
 frame("зина", 3)
 d = View(50 * mm, 95 * mm, 25, off=(SX0 - 0.35, SY0 - 0.4))
-d.rect(SX0 - 0.35, SY0 - TE, SL + 0.7, TE, fill=0.18, stroke=False)
-d.rect(SX0 - TI, SY0, TI, SW + 0.25, fill=0.35, stroke=False)
+d.rect(SX0 - 0.35, SY0 + SW, SL + 0.7, TE, fill=0.18, stroke=False)
+d.rect(SX0 - TI, SY0 - 0.25, TI, SW + 0.25, fill=0.35, stroke=False)
 stair_plan(d, numbers=True)
 d.dimh(SX0, x0, SY0 - 0.6); d.dimh(x0, x0 + NT * TREAD, SY0 - 0.6, "7 × 26 = 182")
 d.dimh(x0 + NT * TREAD, SX0 + SL, SY0 - 0.6)
@@ -261,7 +262,7 @@ d.dimh(SX0, SX0 + SL, SY0 - 0.95)
 d.dimv(SY0, SY0 + FW, SX0 + SL + 0.3); d.dimv(SY0 + FW, SY0 + FW + GAP, SX0 + SL + 0.3)
 d.dimv(SY0 + FW + GAP, SY0 + SW, SX0 + SL + 0.3)
 d.dimv(SY0, SY0 + SW, SX0 + SL + 0.65)
-c.setFont("FB", 10); X, Y = d.p(SX0 - 0.3, SY0 + SW + 0.35); c.drawString(X, Y, "НАҚШАИ ЗИНА")
+c.setFont("FB", 10); X, Y = d.p(SX0 - 0.3, SY0 + SW + 0.65); c.drawString(X, Y, "НАҚШАИ ЗИНА")
 tx, ty = 270 * mm, 190 * mm
 c.setFont("F", 9)
 for i, t in enumerate(["16 пиллакон", "баландӣ 17,2 см", "умқ 26 см", "бари марш 90 см"]):
