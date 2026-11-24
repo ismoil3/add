@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>Подвали 13 × 8</title>
+<title>Хона</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
@@ -132,7 +132,7 @@
 
 <div class="wrap">
   <header>
-    <h1>Хона: таҳхона ва ошёнаи 1</h1>
+    <h1>Хона</h1>
     <p class="lead" id="lead">Ошёнаи 1: хонаи 9 × 8 м бо ду ҳуҷра, ошхона, даҳлез ва зина, айвон, боғча ва ду гузаргоҳи мошин. Таҳхона 13 × 8 м дар зери он: қисми 9 × 8 м бо баландии 2,50 м ва қисми 4 × 8 м (зери гузаргоҳи рост), ки 50 см пасттар аст. Сатҳро интихоб кунед, «Аз дарун»-ро пахш кунед.</p>
   </header>
 
@@ -700,8 +700,8 @@
     // concrete frame: columns 40 × 40 on the grid, flush with the outer faces
     const colAt = (x0, x1, z0, z1, h) => box(f1, x0 - 0.01, x1 + 0.01, y0, y0 + h, z0 - 0.01, z1 + 0.01, "concrete");
     const gx = [[0, 0.4], [4.3, 4.7], [8.6, 9]], gz = [[-4, -3.6], [-0.2, 0.2], [3.6, 4]];
-    gx.forEach(([a, b]) => gz.forEach(([c, d]) => colAt(a, b, c, d, H1)));
-    solids1.push({ x0: 4.3, x1: 4.7, z0: -0.2, z1: 0.2 });
+    // no free-standing column in the middle of the house (grid point 3Б is left out)
+    gx.forEach(([a, b]) => gz.forEach(([c, d]) => { if (a === 4.3 && c === -0.2) return; colAt(a, b, c, d, H1); }));
     // edge columns of the driveways carry floors 2–3
     [[-4.5, -4.1], [12.6, 13]].forEach(([a, b]) => gz.forEach(([c, d]) => colAt(a, b, c, d, H1F)));
 
@@ -1099,7 +1099,7 @@
         `Қисми хурд ${fmt(P.lb)} × ${fmt(P.w)} м, фарш ${fmt(P.drop * 100, 0)} см пасттар, баландӣ ${fmt(P.hb)} м. ` +
         `Ошёнаи 1: хонаи 9 × 8 м бо ду ҳуҷра, ошхона, даҳлез ва зина, айвон, боғча ва ду гузаргоҳи мошин. ` +
         `Моделро бо ангушт ё муш гардонед, сатҳро интихоб кунед, «Аз дарун»-ро пахш кунед.`;
-      document.querySelector("h1").textContent = "Хона: таҳхона ва ошёнаи 1";
+      document.querySelector("h1").textContent = "Хона";
     }
     ids.forEach((id) => (document.getElementById(id).value = P[id]));
   }
